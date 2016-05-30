@@ -55,3 +55,16 @@ def get_tm_session(session_factory, transaction_manager):
     dbsession = session_factory()
     register(dbsession, transaction_manager=transaction_manager)
     return dbsession
+
+
+def get_dbsession(request):
+    """
+    This method becomes a @reify property on the request, request.dbsession.
+
+    It will return a new dbsession based on the dbsession_factory in the
+    application registry.
+
+    :param request: Pyramid request object
+    :return: SQLAlchemy session
+    """
+    return get_tm_session(request.registry['dbsession_factory'], request.tm)
