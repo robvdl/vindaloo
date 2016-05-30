@@ -7,7 +7,6 @@ from marshmallow import Schema, fields
 from vindaloo.api import Api
 from vindaloo.resource import Resource
 from vindaloo.service import Service
-from vindaloo.request import Request
 
 
 class UserSchema(Schema):
@@ -44,7 +43,7 @@ class AuthService(Service):
 
 
 if __name__ == '__main__':
-    config = Configurator(request_factory=Request)
+    config = Configurator()
     config.include('vindaloo')
 
     apiv1 = Api('v1', path='/api/v1')
