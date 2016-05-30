@@ -1,0 +1,12 @@
+from pyramid.config import Configurator
+from vindaloo.request import Request
+
+
+def main(global_config, **settings):
+    """
+    This function returns a Pyramid WSGI application.
+    """
+    config = Configurator(settings=settings, request_factory=Request)
+    config.include('vindaloo')
+    config.scan()
+    return config.make_wsgi_app()

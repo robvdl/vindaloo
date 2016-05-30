@@ -2,7 +2,7 @@ import os
 
 from setuptools import setup, find_packages
 
-from vindaloo.version import VERSION
+from {{package}}.version import VERSION
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -21,9 +21,9 @@ with open(os.path.join(here, 'requirements/dev.txt')) as f:
 
 
 setup(
-    name='vindaloo',
+    name='{{project}}',
     version=VERSION,
-    description='JSON API library for Pyramid',
+    description='{{project}}',
     long_description=README + '\n\n' + CHANGES,
     classifiers=[
         'Programming Language :: Python :: 3',
@@ -31,9 +31,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: API',
     ],
-    author='Rob van der Linde',
-    author_email='robvdl@gmail.com',
-    url='https://github.com/robvdl/vindaloo',
+    author='',
+    author_email='',
+    url='',
     keywords='json api pyramid sqlalchemy',
     packages=find_packages(),
     include_package_data=True,
@@ -43,8 +43,8 @@ setup(
     extras_require={'dev': DEV_REQUIRES},
     test_suite='nose.collector',
     entry_points={
-        'pyramid.scaffold': [
-            'vindaloo = vindaloo.scaffolds:VindalooTemplate'
+        'paste.app_factory': [
+            'main = {{package}}:main'
         ]
     }
 
