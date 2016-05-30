@@ -26,7 +26,7 @@ def get_engine(settings, prefix='sqlalchemy.'):
 
 
 def get_session_factory(engine):
-    factory = sessionmaker()
+    factory = sessionmaker(autoflush=False)
     factory.configure(bind=engine)
     return factory
 

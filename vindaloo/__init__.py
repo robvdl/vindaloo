@@ -4,12 +4,23 @@ from .security import get_authenticated_user
 
 
 def includeme(config):
+    """
+    The includeme() function gets called by Pyramid when executing::
+
+        config.include('vindaloo')
+
+    This will initialize and configure the library with the Pyramid framework.
+
+    :param config: Pyramid Configurator object
+    """
     settings = config.get_settings()
     config.include('pyramid_tm')
     config.include('pyramid_jinja2')
 
     # Store the dbsession_factory in the application registry, unless one
     # has already been setup earlier, in which case we should use that.
+    # Note that if you setup your own session factory, remember to turn off
+    # autoflush as this can sometimes interfere with complex validation.
     if 'session_factory' in config.registry:
         session_factory = config.registry['dbsession_factory']
     else:
