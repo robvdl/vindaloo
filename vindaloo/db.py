@@ -18,8 +18,6 @@ NAMING_CONVENTION = {
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
-Model = declarative_base(metadata=metadata)
-
 
 def get_engine(settings, prefix='sqlalchemy.'):
     return engine_from_config(settings, prefix)
@@ -68,3 +66,24 @@ def get_dbsession(request):
     :return: SQLAlchemy session
     """
     return get_tm_session(request.registry['dbsession_factory'], request.tm)
+
+
+class BaseModel:
+    """
+    Provides a base class for all models.
+
+    Do not inherit your models of this class directly, this gets handled
+    when initializing the declarative base factory.
+
+    Instead just inherit all models of Model.
+    """
+
+    def __repr__(self):
+        description = str(self)
+        if description:
+            return '<{} {}>'.format(self.__class__.__name__, description)
+        else:
+            return '<{}>'.format(self.__class__.__name__)
+
+
+Model = declarative_base(metadata=metadata, cls=BaseModel)

@@ -1,5 +1,5 @@
 from .config import add_api
-from .db import get_engine, get_session_factory, get_tm_session, get_dbsession
+from .db import get_engine, get_session_factory, get_dbsession
 from .security import get_authenticated_user
 
 
@@ -16,6 +16,7 @@ def includeme(config):
     settings = config.get_settings()
     config.include('pyramid_tm')
     config.include('pyramid_jinja2')
+    config.scan('.models')
 
     # Store the dbsession_factory in the application registry.
     session_factory = get_session_factory(get_engine(settings))
