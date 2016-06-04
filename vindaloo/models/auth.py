@@ -1,5 +1,4 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text, Boolean, Table, DateTime
-from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import relationship
 from passlib.hash import pbkdf2_sha256
 
@@ -52,7 +51,7 @@ class User(Model):
     email = Column(Text)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
-    date_joined = Column(DateTime, server_default=func.now())
+    date_joined = Column(DateTime)
     last_login = Column(DateTime)
     groups = relationship('Group', secondary=user_group_table, backref='users')
 
