@@ -2,7 +2,6 @@ from sqlalchemy import Column, ForeignKey, Integer, Text, Boolean, Table, DateTi
 from sqlalchemy.orm import relationship
 
 from vindaloo.db import Model
-from vindaloo.security import encrypt_password
 
 # bridge tables
 group_permission_table = Table(
@@ -69,4 +68,5 @@ class User(Model):
         """
         Change the password for this user.
         """
+        from vindaloo.security import encrypt_password
         self.password = encrypt_password(password)
