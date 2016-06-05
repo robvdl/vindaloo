@@ -15,7 +15,7 @@ def add_api(config, api):
     config.action(discriminator, callable=callback)
 
 
-def setup_auth_settings(settings):
+def configure_auth_settings(settings):
     """
     Sets up the auth configuration based on the application .ini file
     settings and provides default settings where things are missing.
