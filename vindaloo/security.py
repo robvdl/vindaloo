@@ -1,4 +1,4 @@
-from passlib.hash import pbkdf2_sha256
+import passlib.hash
 from pyramid.security import remember, forget
 
 from .models import User
@@ -21,17 +21,29 @@ def verify_password(user, password):
     """
     Validate password against hashed password in database.
     """
-    return pbkdf2_sha256.verify(password, user.password)
+    try:
+        hashalg = user.password.split('$')[1].replace('-', '_')
+        password_module = getattr(passlib.hash, hashalg)
+    except (AttributeError, IndexError):
+        return False
+
+    return password_module.verify(password, user.password)
 
 
-def encrypt_password(password):
+def encrypt_password(settings, password):
     """
-    Encrypts the password using pbkdf2 sha256, called by user.set_password().
+    Encrypts the password using passlib, hashalg has to be supported by
+    passlib, ideally it should be pbkdf2_sha256, pbkdf2_sha512 or bcrypt.
+    Passing in rounds is optional and if left out, will use passlib defaults.
 
+    :param settings: Pyramid settings dict.
     :param password: Plain text password
     :return: Encrypted password
     """
-    return pbkdf2_sha256.encrypt(password, rounds=10000)
+    hashalg = settings['vindaloo.auth.hashalg']
+    rounds = settings.get('vindaloo.auth.rounds')
+    password_module = getattr(passlib.hash, hashalg)
+    return password_module.encrypt(password, rounds=rounds)
 
 
 def login_user(request, username, password):

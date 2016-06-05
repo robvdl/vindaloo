@@ -1,6 +1,7 @@
 from .config import add_api
 from .db import get_engine, get_session_factory, get_dbsession
 from .security import get_authenticated_user, login_user, logout_user
+from .config import setup_auth_settings
 
 
 def includeme(config):
@@ -21,6 +22,9 @@ def includeme(config):
     # Store the dbsession_factory in the application registry.
     session_factory = get_session_factory(get_engine(settings))
     config.registry['dbsession_factory'] = session_factory
+
+    # Configures the passlib hash algorithm and settings to use.
+    setup_auth_settings(settings)
 
     # Adds the config.add_api() method to the Configurator.
     config.add_directive('add_api', add_api)

@@ -64,9 +64,12 @@ class User(Model):
         else:
             return self.username
 
-    def set_password(self, password):
+    def set_password(self, settings, password):
         """
-        Change the password for this user.
+        Sets the password for this user.
+
+        :param settings: Pyramid settings dict with current hash algorithm.
+        :param password: Plain text password to encrypt.
         """
         from vindaloo.security import encrypt_password
-        self.password = encrypt_password(password)
+        self.password = encrypt_password(settings, password)
