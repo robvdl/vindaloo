@@ -14,3 +14,16 @@ class BaseModel:
             return '<{} {}>'.format(self.__class__.__name__, description)
         else:
             return '<{}>'.format(self.__class__.__name__)
+
+    @classmethod
+    def get(cls, dbsession, **kwargs):
+        """
+        Returns model instance by kwargs, for example::
+
+            admin_group = Group.get(dbsession, name='Administrator')
+
+        :param dbsession: SQLAlchemy  database session.
+        :param kwargs: Keyword arguments
+        :return: Model instance or None if not found.
+        """
+        return dbsession.query(cls).filter_by(**kwargs).first()

@@ -1,8 +1,8 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text, Boolean, Table, DateTime
 from sqlalchemy.orm import relationship
-from passlib.hash import pbkdf2_sha256
 
 from vindaloo.db import Model
+from vindaloo.security import encrypt_password
 
 # bridge tables
 group_permission_table = Table(
@@ -65,14 +65,8 @@ class User(Model):
         else:
             return self.username
 
-    def check_password(self, password):
-        """
-        Validate password against hashed password in database.
-        """
-        return pbkdf2_sha256.verify(password, self.password)
-
     def set_password(self, password):
         """
         Change the password for this user.
         """
-        self.password = pbkdf2_sha256.encrypt(password, rounds=10000)
+        self.password = encrypt_password(password)

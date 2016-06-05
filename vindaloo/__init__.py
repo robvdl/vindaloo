@@ -1,6 +1,6 @@
 from .config import add_api
 from .db import get_engine, get_session_factory, get_dbsession
-from .security import get_authenticated_user
+from .security import get_authenticated_user, login_user, logout_user
 
 
 def includeme(config):
@@ -30,3 +30,7 @@ def includeme(config):
 
     # Also add the request.user @reify property in the same way.
     config.add_request_method(get_authenticated_user, 'user', reify=True)
+
+    # Add methods for logging users in and out.
+    config.add_request_method(login_user, 'login')
+    config.add_request_method(logout_user, 'logout')
