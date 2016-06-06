@@ -43,6 +43,9 @@ setup(
     extras_require={'dev': DEV_REQUIRES},
     test_suite='nose.collector',
     entry_points={
+        'console_scripts': [
+            'vindaloo = vindaloo.cli:main',
+        ],
         'pyramid.scaffold': [
             'vindaloo = vindaloo.scaffolds:VindalooTemplate'
         ]

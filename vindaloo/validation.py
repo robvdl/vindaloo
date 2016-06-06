@@ -1,3 +1,8 @@
+import re
+
+RE_VALID_EMAIL = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b')
+
+
 def validate_schema(request, schema):
     content_type = request.headers.get('Content-Type')
 
