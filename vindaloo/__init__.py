@@ -1,6 +1,9 @@
+from pyramid.httpexceptions import HTTPException
+
 from .config import add_api
 from .db import get_engine, get_session_factory, get_dbsession
 from .security import get_authenticated_user, login_user, logout_user
+from .core.exceptions import format_json_exception
 
 
 def includeme(config):
@@ -40,3 +43,6 @@ def includeme(config):
     # Add methods for logging users in and out.
     config.add_request_method(login_user, 'login')
     config.add_request_method(logout_user, 'logout')
+
+    # Provide better JSON formatting for exceptions.
+    HTTPException._json_formatter = format_json_exception

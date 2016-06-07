@@ -22,9 +22,7 @@ class AuthService(Service):
         if self.request.login(username, password):
             return {'message': 'Login successful.'}
         else:
-            # TODO: find a better way to deal with the default body template.
-            return HTTPForbidden('Invalid username or password.',
-                                 body_template='${detail}')
+            return HTTPForbidden('Invalid username or password.')
 
     def delete(self):
         self.request.logout()
