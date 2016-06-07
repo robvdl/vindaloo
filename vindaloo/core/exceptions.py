@@ -5,20 +5,33 @@ def format_json_exception(exception, status, body, title, environ):
     rendered to JSON if the correct headers are sent to the server.
 
     This is great feature, however the message isn't formatted very
-    nicely by default because the body is multiline and contains
+    nicely by default, because the body text is multiline and contains
     newline characters in it.
 
-    We fix this globally by monkey-patching the HTTPException._json_formatter
-    method to point to this one.
+    We fix this by monkey-patching the HTTPException._json_formatter
+    method to point to this one, the message and description get
+    separated out into individual fields rather than munged into one.
     """
     # Tidies up \n\n\n put into the body field by Pyramid.
     lines = list(filter(None, body.splitlines()))
 
-    return {
-        'message': lines[0],  # We only care about the first line for JSON.
+    message = lines[0]
+    if len(lines) > 1:
+        description = lines[1]
+    else:
+        description = str(message)
+
+    json_data = {
+        'message': message,
         'code': status,
         'title': title
     }
+
+    # An additional description was provided with the exception.
+    if description != message:
+        json_data['description'] = description
+
+    return json_data
 
 
 class InvalidPage(Exception):
