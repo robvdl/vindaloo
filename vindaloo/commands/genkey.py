@@ -1,5 +1,5 @@
 from vindaloo.cli import BaseCommand
-from vindaloo.core.utils import random_key_generator
+from vindaloo.security import generate_secret_key
 
 
 class Command(BaseCommand):
@@ -8,4 +8,4 @@ class Command(BaseCommand):
     """
 
     def handle(self, args):
-        print(random_key_generator(40))
+        print(generate_secret_key(40))

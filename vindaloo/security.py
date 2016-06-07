@@ -1,7 +1,26 @@
-import passlib.hash
-from pyramid.security import remember, forget
+import os
+import binascii
 
-from .models import User
+import passlib.hash
+from pyramid.security import Allow, remember, forget, ALL_PERMISSIONS
+
+from .models import User, Group, Permission
+
+
+def groupfinder(username, request):
+    """
+    The groupfinder callback is called by Pyramid, it should return a
+    list of groups (which must be strings), that the user has access to.
+
+    Note that username parameter is not used because as we can already
+    get to the current user through the request.user @reify property.
+    """
+    # Groups start with "group:" so we can have a special group "superuser".
+    groups = ['group:' + group.name for group in request.user.groups]
+    if request.user.is_superuser:
+        groups.append('superuser')
+
+    return groups
 
 
 def get_authenticated_user(request):
@@ -87,3 +106,33 @@ def logout_user(request):
     """
     headers = forget(request)
     request.response.headerlist.extend(headers)
+
+
+def generate_secret_key(length):
+    """
+    Generate a new secret key using length given.
+    """
+    return binascii.hexlify(os.urandom(length)).decode('utf-8')
+
+
+class RootFactory:
+    """
+    The RootFactory class is where the list of ACLs is generated
+    for each request.
+
+    It is also an entry point for traversal-based applications.
+    """
+
+    def __init__(self, request):
+        """
+        The RootFactory constructor runs for every request so we don't
+        want to do too much work here.
+
+        :param request: Pyramid request object
+        """
+        # To start with, superusers get access to everything.
+        self.__acl__ = [(Allow, 'superuser', ALL_PERMISSIONS)]
+
+        # Add ACLs from database to the list.
+        perms = request.dbsession.query(Permission, Group).join(Group.permissions)
+        self.__acl__.extend([(Allow, 'group:' + grp.name, perm.name) for perm, grp in perms])

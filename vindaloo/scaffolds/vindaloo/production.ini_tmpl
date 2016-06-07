@@ -14,6 +14,9 @@ pyramid.default_locale_name = en
 
 sqlalchemy.url = sqlite:///%(here)s/{{project}}.sqlite
 
+# Session secret key, keep this secret and never store it on GIT.
+session.secret = {{secret_key}}
+
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0

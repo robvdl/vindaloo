@@ -16,6 +16,9 @@ pyramid.includes =
 
 sqlalchemy.url = sqlite:///%(here)s/{{project}}.sqlite
 
+# Session secret key, keep this secret and never store it on GIT.
+session.secret = {{secret_key}}
+
 # By default, the toolbar only appears for clients from IP addresses
 # '127.0.0.1' and '::1'.
 # debugtoolbar.hosts = 127.0.0.1 ::1

@@ -3,7 +3,7 @@ import shlex
 import signal
 from subprocess import call
 
-from vindaloo.db import parse_db_url
+from vindaloo.config import parse_db_url
 from vindaloo.cli import BaseCommand
 from vindaloo.core.exceptions import CommandError
 
