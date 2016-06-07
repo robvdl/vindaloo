@@ -20,6 +20,7 @@ def includeme(config):
     config.include('pyramid_tm')
     config.include('pyramid_jinja2')
     config.scan('.models')
+    config.scan('.views')
 
     # Store the dbsession_factory in the application registry.
     session_factory = get_session_factory(get_engine(settings))
