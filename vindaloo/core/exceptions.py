@@ -2,21 +2,20 @@ def format_json_exception(exception, status, body, title, environ):
     """
     Since Pyramid 1.7, any HTTP Exceptions that are either raised by
     the application or returned as a response can be automatically
-    rendered to JSON if the correct request headers are sent to the server.
+    rendered to JSON if the correct headers are sent to the server.
 
-    This is great feature, however the description isn't formatted
-    very nicely because it is multiline and contains \n\n characters in it.
+    This is great feature, however the message isn't formatted very
+    nicely by default because the body is multiline and contains
+    newline characters in it.
 
     We fix this globally by monkey-patching the HTTPException._json_formatter
-    method to point to this one, it may not be the most elegant way,
-    but I don't know of any Pyramid API to do this globally otherwise.
+    method to point to this one.
     """
-    # Tidies up \n\n\n put into the description by Pyramid.
-    lines = [l for l in body.split('\n') if l]
+    # Tidies up \n\n\n put into the body field by Pyramid.
+    lines = list(filter(None, body.splitlines()))
 
-    # We only care about the last line if there is a custom description.
     return {
-        'message': lines[-1],  # Normally Pyramid sets this to body.
+        'message': lines[0],  # We only care about the first line for JSON.
         'code': status,
         'title': title
     }

@@ -22,7 +22,7 @@ class AuthService(Service):
         if self.request.login(username, password):
             return {'message': 'Login successful.'}
         else:
-            return HTTPForbidden('Invalid username or password.')
+            return HTTPForbidden(explanation='Invalid username or password.')
 
     def delete(self):
         self.request.logout()
