@@ -84,7 +84,6 @@ class Resource(metaclass=ResourceMetaLoader):
 
     def __init__(self, request):
         self.request = request
-        self.model = self._meta.model
 
     @reify
     def schema(self):
@@ -105,6 +104,10 @@ class Resource(metaclass=ResourceMetaLoader):
     @reify
     def is_detail_route(self):
         return self.request.matched_route.name.endswith('-detail')
+
+    @reify
+    def model(self):
+        return self._meta.model
 
     @classmethod
     def get_path(cls, api):
@@ -268,8 +271,7 @@ class Resource(metaclass=ResourceMetaLoader):
 class ModelResource(Resource):
 
     def get_detail(self):
-        model = self.model
         obj_id = self.request.matchdict['id']
-        obj = self.request.dbsession.query(model).get(obj_id)
+        obj = self.request.dbsession.query(self.model).get(obj_id)
         print(obj)
         return {}
