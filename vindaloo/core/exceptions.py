@@ -16,10 +16,7 @@ def format_json_exception(exception, status, body, title, environ):
     lines = [line.strip() for line in body.splitlines() if line]
 
     message = lines[0]
-    if len(lines) > 1:
-        description = lines[1]
-    else:
-        description = str(exception)
+    description = str(exception)
 
     json_data = {
         'message': message,
