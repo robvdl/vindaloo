@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields
-from pyramid.httpexceptions import HTTPForbidden
+from pyramid.httpexceptions import HTTPUnauthorized
 
 from vindaloo.service import Service
 
@@ -22,7 +22,7 @@ class AuthService(Service):
         if self.request.login(username, password):
             return {'message': 'Login successful.'}
         else:
-            return HTTPForbidden(explanation='Invalid username or password.')
+            return HTTPUnauthorized(explanation='Invalid username or password.')
 
     def delete(self):
         self.request.logout()
