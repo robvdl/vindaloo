@@ -12,14 +12,14 @@ def format_json_exception(exception, status, body, title, environ):
     method to point to this one, the message and description get
     separated out into individual fields rather than munged into one.
     """
-    # Tidies up \n\n\n put into the body field by Pyramid.
-    lines = list(filter(None, body.splitlines()))
+    # Tidies up \n\n\n and whitespace put into the body field by Pyramid.
+    lines = [line.strip() for line in body.splitlines() if line]
 
     message = lines[0]
     if len(lines) > 1:
         description = lines[1]
     else:
-        description = str(message)
+        description = str(exception)
 
     json_data = {
         'message': message,
