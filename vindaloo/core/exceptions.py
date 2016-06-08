@@ -15,8 +15,12 @@ def format_json_exception(exception, status, body, title, environ):
     # Tidies up \n\n\n and whitespace put into the body field by Pyramid.
     lines = [line.strip() for line in body.splitlines() if line]
 
-    message = lines[0]
-    description = str(exception)
+    if lines:
+        message = lines[0]
+        description = str(exception)
+    else:
+        message = title
+        description = title
 
     json_data = {
         'message': message,

@@ -22,18 +22,21 @@ class Api:
         self.services = []
         self.__name__ = name
 
-    def add(self, object_class):
+    def add(self, *items):
         """
-        Adds Resource or Service classes.
+        Adds one or more Resource or Services to this Api object.
+
+        :param items: List of one or more resources or services to add.
         """
-        if Resource in object_class.__bases__:
-            log.debug('Adding resource: {}'.format(object_class))
-            self.resources.append(object_class)
-        elif Service in object_class.__bases__:
-            log.debug('Adding service: {}'.format(object_class))
-            self.services.append(object_class)
-        else:
-            raise ValueError('Can only add classes of type Resource or Service.')
+        for item in items:
+            if issubclass(item, Resource):
+                log.debug('Adding resource: {}'.format(item))
+                self.resources.append(item)
+            elif issubclass(item, Service):
+                log.debug('Adding service: {}'.format(item))
+                self.services.append(item)
+            else:
+                raise ValueError('Can only add classes of type Resource or Service.')
 
     def register(self, config):
         """

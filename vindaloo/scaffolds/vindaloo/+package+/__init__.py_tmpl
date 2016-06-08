@@ -1,5 +1,6 @@
 from vindaloo.api import Api
 from vindaloo.auth.services import AuthService
+from vindaloo.auth.resources import UserResource, GroupResource, PermissionResource
 from vindaloo.config import setup_configurator
 
 
@@ -12,6 +13,7 @@ def main(global_config, **settings):
 
     apiv1 = Api('v1', path='/api/v1')
     apiv1.add(AuthService)
+    apiv1.add(UserResource, GroupResource, PermissionResource)
 
     config.add_api(apiv1)
 
