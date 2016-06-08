@@ -87,17 +87,23 @@ class Resource(metaclass=ResourceMetaLoader):
 
     @reify
     def schema(self):
-        is_list_route = self.request.matched_route.name.endswith('-list')
-
         # Don't use a schema for DELETE.
         if self.request.method == 'DELETE':
             schema = None
-        elif self.request.method == 'GET' and is_list_route:
+        elif self.request.method == 'GET' and self.is_list_route:
             schema = self._meta.filters
         else:
             schema = self._meta.schema
 
         return schema or Schema
+
+    @reify
+    def is_list_route(self):
+        return self.request.matched_route.name.endswith('-list')
+
+    @reify
+    def is_detail_route(self):
+        return self.request.matched_route.name.endswith('-detail')
 
     @classmethod
     def get_path(cls, api):
@@ -107,39 +113,29 @@ class Resource(metaclass=ResourceMetaLoader):
     def setup_routes(cls, config, api):
         list_path = cls.get_path(api)
         list_route = '{}-{}-list'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch_list', route_name=list_route, renderer='json')
+        config.add_view(cls, attr='dispatch', route_name=list_route, renderer='json')
         config.add_route(list_route, list_path)
 
         detail_path = list_path + '/{id}'
         detail_route = '{}-{}-detail'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch_detail', route_name=detail_route, renderer='json')
+        config.add_view(cls, attr='dispatch', route_name=detail_route, renderer='json')
         config.add_route(detail_route, detail_path)
 
     def validation_errors(self):
         self.request.response.status_code = 400
         return {'errors': self.request.errors}
 
-    def dispatch_list(self):
+    def dispatch(self):
         method = self.request.method.lower()
-        handler = getattr(self, method + '_list', None)
-        if handler and callable(handler) and method in self._meta.list_allowed_methods:
-            validate_schema(self.request, self.schema())
-            if self.request.errors:
-                return self.validation_errors()
-            else:
-                # Did the handler itself produce any errors?
-                response = handler()
-                if self.request.errors:
-                    return self.validation_errors()
-                else:
-                    return response
-        else:
-            raise HTTPMethodNotAllowed()
 
-    def dispatch_detail(self):
-        method = self.request.method.lower()
-        handler = getattr(self, method + '_detail', None)
-        if handler and callable(handler) and method in self._meta.detail_allowed_methods:
+        if self.is_list_route:
+            handler = getattr(self, method + '_list', None)
+            allowed_methods = self._meta.list_allowed_methods
+        else:
+            handler = getattr(self, method + '_detail', None)
+            allowed_methods = self._meta.detail_allowed_methods
+
+        if handler and callable(handler) and method in allowed_methods:
             validate_schema(self.request, self.schema())
             if self.request.errors:
                 return self.validation_errors()
