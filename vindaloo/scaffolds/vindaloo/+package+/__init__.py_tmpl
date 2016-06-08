@@ -13,4 +13,6 @@ def main(global_config, **settings):
     apiv1 = Api('v1', path='/api/v1')
     apiv1.add(AuthService)
 
+    config.add_api(apiv1)
+
     return config.make_wsgi_app()
