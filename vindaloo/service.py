@@ -58,7 +58,12 @@ class Service(metaclass=ServiceMetaLoader):
 
     @reify
     def schema(self):
-        return self._meta.schema or Schema
+        if self.request.method == 'DELETE':
+            # Don't use the metaclass schema for DELETE.
+            return Schema()
+        else:
+            # For everything else use the schema from the metaclass.
+            return self._meta.schema() or Schema()
 
     @classmethod
     def get_path(cls, api):
@@ -78,7 +83,7 @@ class Service(metaclass=ServiceMetaLoader):
         handler = getattr(self, self.request.method.lower(), None)
         if handler and callable(handler):
             # Did schema validation produce any errors?
-            validate_schema(self.request, self.schema())
+            validate_schema(self.request, self.schema)
             if self.request.errors:
                 return self.validation_errors()
             else:

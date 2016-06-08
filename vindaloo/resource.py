@@ -89,11 +89,15 @@ class Resource(metaclass=ResourceMetaLoader):
     def schema(self):
         is_list_route = self.request.matched_route.name.endswith('-list')
 
-        # For get_list we need to use the filter schema instead.
-        if self.request.method == 'GET' and is_list_route:
-            return self._meta.filters or Schema
+        if self.request.method == 'DELETE':
+            # Don't use the metaclass schema for DELETE.
+            return Schema()
+        elif self.request.method == 'GET' and is_list_route:
+            # For get_list we need to use the filter schema.
+            return self._meta.filters() or Schema()
         else:
-            return self._meta.schema or Schema
+            # For everything else use the schema from the metaclass.
+            return self._meta.schema() or Schema()
 
     @classmethod
     def get_path(cls, api):
@@ -119,8 +123,7 @@ class Resource(metaclass=ResourceMetaLoader):
         method = self.request.method.lower()
         handler = getattr(self, method + '_list', None)
         if handler and callable(handler) and method in self._meta.list_allowed_methods:
-            # Did schema validation produce any errors?
-            validate_schema(self.request, self.schema())
+            validate_schema(self.request, self.schema)
             if self.request.errors:
                 return self.validation_errors()
             else:
@@ -137,8 +140,7 @@ class Resource(metaclass=ResourceMetaLoader):
         method = self.request.method.lower()
         handler = getattr(self, method + '_detail', None)
         if handler and callable(handler) and method in self._meta.detail_allowed_methods:
-            # Did schema validation produce any errors?
-            validate_schema(self.request, self.schema())
+            validate_schema(self.request, self.schema)
             if self.request.errors:
                 return self.validation_errors()
             else:

@@ -8,7 +8,9 @@ RE_VALID_EMAIL = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\
 def validate_schema(request, schema):
     content_type = request.headers.get('Content-Type')
 
-    if request.method == 'GET':
+    # GET and DELETE should use query parameters instead of the body.
+    # Having DELETE with a body doesn't really make sense anyway.
+    if request.method in ('GET', 'DELETE'):
         request_vars = dict(request.GET)
     elif content_type == 'application/json':
         # Avoid a bad request if there is no body.
