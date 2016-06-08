@@ -1,5 +1,7 @@
 import re
 
+from pyramid.httpexceptions import HTTPBadRequest
+
 RE_VALID_EMAIL = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b')
 
 
@@ -9,7 +11,14 @@ def validate_schema(request, schema):
     if request.method == 'GET':
         request_vars = dict(request.GET)
     elif content_type == 'application/json':
-        request_vars = request.json_body
+        # Avoid a bad request if there is no body.
+        if request.body:
+            try:
+                request_vars = request.json_body
+            except ValueError:
+                raise HTTPBadRequest(explanation='Failed to parse JSON request.')
+        else:
+            request_vars = {}
     else:
         # TODO: process form data
         request_vars = {}
