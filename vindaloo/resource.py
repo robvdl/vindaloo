@@ -137,11 +137,14 @@ class Resource(metaclass=ResourceMetaLoader):
 
         if handler and callable(handler) and method in allowed_methods:
             validate_schema(self.request, self.schema())
+
+            # Did schema validation produce any errors?
             if self.request.errors:
                 return self.validation_errors()
             else:
-                # Did the handler itself produce any errors?
                 response = handler()
+
+                # Did the handler itself produce any errors?
                 if self.request.errors:
                     return self.validation_errors()
                 else:
