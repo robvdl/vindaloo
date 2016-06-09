@@ -58,6 +58,7 @@ class Service(metaclass=ServiceMetaLoader):
 
     def __init__(self, request):
         self.request = request
+        self.request.errors = {}
 
     @reify
     def schema(self):

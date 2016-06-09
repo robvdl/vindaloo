@@ -1,7 +1,7 @@
 import logging
 
-from .resource import Resource
-from .service import Service
+from vindaloo.resource import Resource
+from vindaloo.service import Service
 
 log = logging.getLogger(__name__)
 
