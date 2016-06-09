@@ -6,6 +6,5 @@ from vindaloo.auth.schemas.user import UserSchema
 class UserResource(ModelResource):
 
     class Meta:
-        name = 'user'
         model = User
         schema = UserSchema

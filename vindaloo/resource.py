@@ -2,9 +2,11 @@ import logging
 
 from marshmallow import Schema
 from pyramid.decorator import reify
-from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed
+from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed,\
+    HTTPNotFound
 
 from .core.paginator import Paginator
+from .core.utils import field_name
 from .validation import validate_schema
 
 log = logging.getLogger(__name__)
@@ -54,6 +56,14 @@ class ResourceMeta:
         overrides['detail_allowed_methods'] = \
             [verb.lower() for verb in overrides['detail_allowed_methods']]
 
+        # If name is missing we can determine it from the model class name.
+        # This only works for resources however, not services.
+        name = overrides.get('name')
+        if name is None:
+            model = overrides.get('model')
+            if model:
+                overrides['name'] = field_name(model.__name__, separator='-')
+
         return object.__new__(type('ResourceMeta', (cls,), overrides))
 
 
@@ -65,8 +75,11 @@ class ResourceMetaLoader(type):
 
     def __new__(mcs, name, bases, attrs):
         new_class = super(ResourceMetaLoader, mcs).__new__(mcs, name, bases, attrs)
+
+        # If Meta is None, don't do anything as there is no Meta class.
         meta = getattr(new_class, 'Meta', None)
-        new_class._meta = ResourceMeta(meta)
+        if meta:
+            new_class._meta = ResourceMeta(meta)
 
         return new_class
 
@@ -290,7 +303,9 @@ class ModelResource(Resource):
         obj_id = self.request.matchdict['id']
         obj = self.dbsession.query(self.model).get(obj_id)
 
-        schema = self.schema()
-        result = schema.dump(obj)
-
-        return result.data
+        if obj:
+            schema = self.schema()
+            result = schema.dump(obj)
+            return result.data
+        else:
+            return HTTPNotFound(explanation='Object not found.')

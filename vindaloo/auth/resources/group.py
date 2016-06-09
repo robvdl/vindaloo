@@ -5,5 +5,4 @@ from vindaloo.models import Group
 class GroupResource(ModelResource):
 
     class Meta:
-        name = 'group'
         model = Group

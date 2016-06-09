@@ -37,8 +37,11 @@ class ServiceMetaLoader(type):
 
     def __new__(mcs, name, bases, attrs):
         new_class = super(ServiceMetaLoader, mcs).__new__(mcs, name, bases, attrs)
+
+        # If Meta is None, don't do anything as there is no Meta class.
         meta = getattr(new_class, 'Meta', None)
-        new_class._meta = ServiceMeta(meta)
+        if meta:
+            new_class._meta = ServiceMeta(meta)
 
         return new_class
 
