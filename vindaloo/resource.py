@@ -6,7 +6,7 @@ from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed,\
     HTTPNotFound
 
 from .core.paginator import Paginator
-from .core.utils import field_name
+from .core.utils import generate_name_from_class
 from .validation import validate_schema
 
 log = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class ResourceMeta:
         if name is None:
             model = overrides.get('model')
             if model:
-                overrides['name'] = field_name(model.__name__, separator='-')
+                overrides['name'] = generate_name_from_class(model, separator='-')
 
         return object.__new__(type('ResourceMeta', (cls,), overrides))
 

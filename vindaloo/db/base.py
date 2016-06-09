@@ -1,3 +1,8 @@
+from sqlalchemy.ext.declarative import declared_attr
+
+from vindaloo.core.utils import generate_name_from_class
+
+
 class BaseModel:
     """
     Provides a base class for all models.
@@ -14,6 +19,17 @@ class BaseModel:
             return '<{} {}>'.format(self.__class__.__name__, description)
         else:
             return '<{}>'.format(self.__class__.__name__)
+
+    @declared_attr
+    def __tablename__(cls):
+        """
+        This gives a default table name which is just the model class
+        name as lower case, can still be overridden however.
+
+        The default is to lowercase the model name and use underscores
+        between words rather than camelcase.
+        """
+        return generate_name_from_class(cls)
 
     @classmethod
     def get(cls, dbsession, **kwargs):
