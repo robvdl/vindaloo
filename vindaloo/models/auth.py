@@ -50,7 +50,7 @@ class User(Model):
     email = Column(Text)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
-    date_joined = Column(DateTime)
+    created_at = Column(DateTime)
     last_login = Column(DateTime)
     groups = relationship('Group', secondary=user_group_table, backref='users')
 

@@ -10,5 +10,5 @@ class UserSchema(Schema):
     email = fields.Str()
     is_active = fields.Bool(default=True)
     is_superuser = fields.Bool(default=False)
-    date_joined = fields.DateTime()
+    created_at = fields.DateTime()
     last_login = fields.DateTime()
