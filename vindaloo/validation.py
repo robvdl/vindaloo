@@ -28,4 +28,4 @@ def validate_schema(request, schema):
     # Use Marshmallow to deserialize and add to request object.
     deserialized = schema.load(request_vars)
     request.validated = deserialized.data
-    request.errors = deserialized.errors
+    request.errors.update(deserialized.errors)

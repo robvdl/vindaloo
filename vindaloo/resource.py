@@ -84,13 +84,13 @@ class Resource(metaclass=ResourceMetaLoader):
 
     def __init__(self, request):
         self.request = request
+        self.request.errors = {}
 
     @reify
     def schema(self):
         # Don't use a schema for DELETE.
-        if self.request.method == 'DELETE':
-            schema = None
-        elif self.request.method == 'GET' and self.is_list_route:
+        # But use the filter schema for GET list.
+        if self.request.method == 'GET' and self.is_list_route:
             schema = self._meta.filters
         else:
             schema = self._meta.schema
@@ -129,6 +129,16 @@ class Resource(metaclass=ResourceMetaLoader):
         self.request.response.status_code = 400
         return {'errors': self.request.errors}
 
+    def validate_request(self):
+        meth = self.request.method
+        is_list = self.is_list_route
+        is_detail = self.is_detail_route
+
+        # Only do schema validation for specific cases that use it.
+        # This still needs to handle POST and PUT list cases when supported.
+        if meth in ('GET', 'POST') and is_list or meth == 'PUT' and is_detail:
+            validate_schema(self.request, self.schema())
+
     def dispatch(self):
         method = self.request.method.lower()
 
@@ -140,19 +150,21 @@ class Resource(metaclass=ResourceMetaLoader):
             allowed_methods = self._meta.detail_allowed_methods
 
         if handler and callable(handler) and method in allowed_methods:
-            validate_schema(self.request, self.schema())
+            # Run schema validation.
+            self.validate_request()
 
             # Did schema validation produce any errors?
             if self.request.errors:
                 return self.validation_errors()
-            else:
-                response = handler()
 
-                # Did the handler itself produce any errors?
-                if self.request.errors:
-                    return self.validation_errors()
-                else:
-                    return response
+            # Call handler (get_list, get_detail, etc.)
+            response = handler()
+
+            # Did the handler produce any errors?
+            if self.request.errors:
+                return self.validation_errors()
+
+            return response
         else:
             raise HTTPMethodNotAllowed()
 
@@ -277,5 +289,8 @@ class ModelResource(Resource):
     def get_detail(self):
         obj_id = self.request.matchdict['id']
         obj = self.dbsession.query(self.model).get(obj_id)
-        print(obj)
-        return {}
+
+        schema = self.schema()
+        result = schema.dump(obj)
+
+        return result.data

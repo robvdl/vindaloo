@@ -58,13 +58,7 @@ class Service(metaclass=ServiceMetaLoader):
 
     @reify
     def schema(self):
-        # Don't use a schema for DELETE.
-        if self.request.method == 'DELETE':
-            schema = None
-        else:
-            schema = self._meta.schema
-
-        return schema or Schema
+        return self._meta.schema or Schema
 
     @classmethod
     def get_path(cls, api):
@@ -76,6 +70,11 @@ class Service(metaclass=ServiceMetaLoader):
         config.add_view(cls, attr='dispatch', route_name=route, renderer='json')
         config.add_route(route, cls.get_path(api))
 
+    def validate_request(self):
+        # Never do schema validation for DELETE requests.
+        if not self.request.method == 'DELETE':
+            validate_schema(self.request, self.schema())
+
     def validation_errors(self):
         self.request.response.status_code = 400
         return {'errors': self.request.errors}
@@ -85,18 +84,20 @@ class Service(metaclass=ServiceMetaLoader):
         handler = getattr(self, method, None)
 
         if handler and callable(handler):
-            validate_schema(self.request, self.schema())
+            # Run schema validation.
+            self.validate_request()
 
             # Did schema validation produce any errors?
             if self.request.errors:
                 return self.validation_errors()
-            else:
-                response = handler()
 
-                # Did the handler itself produce any errors?
-                if self.request.errors:
-                    return self.validation_errors()
-                else:
-                    return response
+            # Call handler (get, post, put, etc.)
+            response = handler()
+
+            # Did the handler produce any errors?
+            if self.request.errors:
+                return self.validation_errors()
+
+            return response
         else:
             raise HTTPMethodNotAllowed()
