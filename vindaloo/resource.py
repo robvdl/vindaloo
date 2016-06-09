@@ -270,8 +270,12 @@ class Resource(metaclass=ResourceMetaLoader):
 
 class ModelResource(Resource):
 
+    @reify
+    def dbsession(self):
+        return self.request.dbsession
+
     def get_detail(self):
         obj_id = self.request.matchdict['id']
-        obj = self.request.dbsession.query(self.model).get(obj_id)
+        obj = self.dbsession.query(self.model).get(obj_id)
         print(obj)
         return {}
