@@ -1,6 +1,6 @@
 from vindaloo.resource import ModelResource
 from vindaloo.models import Permission
-from vindaloo.api.schemas.permission import PermissionSchema
+from vindaloo.auth.schemas.permission import PermissionSchema
 
 
 class PermissionResource(ModelResource):

@@ -8,6 +8,7 @@ from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed,\
 from .core.paginator import Paginator
 from .core.utils import generate_name_from_class
 from .validation import validate_schema
+from .bundle import Bundle
 
 log = logging.getLogger(__name__)
 
@@ -130,12 +131,12 @@ class Resource(metaclass=ResourceMetaLoader):
     def setup_routes(cls, config, api):
         list_path = cls.get_path(api)
         list_route = '{}-{}-list'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=list_route, renderer='json')
+        config.add_view(cls, attr='dispatch', route_name=list_route, renderer='api')
         config.add_route(list_route, list_path)
 
         detail_path = list_path + '/{id}'
         detail_route = '{}-{}-detail'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=detail_route, renderer='json')
+        config.add_view(cls, attr='dispatch', route_name=detail_route, renderer='api')
         config.add_route(detail_route, detail_path)
 
     def validation_errors(self):
@@ -306,6 +307,7 @@ class ModelResource(Resource):
         if obj:
             schema = self.schema()
             result = schema.dump(obj)
-            return result.data
+
+            return Bundle(obj=obj, data=result.data)
         else:
             return HTTPNotFound(explanation='Object not found.')

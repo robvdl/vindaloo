@@ -35,6 +35,8 @@ def includeme(config):
     # Adds the config.add_api() method to the Configurator.
     config.add_directive('add_api', add_api)
 
+    config.add_renderer('api', 'vindaloo.renderers.ApiRenderer')
+
     # Make request.dbsession @reify property available for use.
     config.add_request_method(get_dbsession, 'dbsession', reify=True)
 
