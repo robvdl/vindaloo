@@ -5,11 +5,11 @@ import argparse
 import importlib
 
 import transaction
-from pyramid.config import Configurator
 from pyramid.paster import get_appsettings, setup_logging
 
-from vindaloo.core.exceptions import CommandError
-from vindaloo.db import get_engine, get_session_factory, get_tm_session
+from .core.exceptions import CommandError
+from .config import setup_configurator
+from .db import get_engine, get_session_factory, get_tm_session
 
 
 class BaseCommand:
@@ -133,19 +133,6 @@ def show_general_help(parser):
     print('\navailable commands:\n  {}\n'.format(command_list))
 
 
-def setup_configurator(settings=None):
-    """
-    Creates a Pyramid Configurator object based on the settings
-    dict provided, then includes vindaloo and returns config object.
-
-    :param settings: Settings dict.
-    :return: Configurator object.
-    """
-    config = Configurator(settings=settings or {})
-    config.include('vindaloo')
-    return config
-
-
 def main(argv=sys.argv):
     # "app" is the name of the cli executable.
     app = os.path.basename(argv[0])
@@ -186,4 +173,5 @@ def main(argv=sys.argv):
                 raise CommandError('Failed to open .ini file "{}".'.format(args.config_uri))
 
             config = setup_configurator(settings)
+            config.include('vindaloo')
             run_command(app, args.command, args.command_args, config)
