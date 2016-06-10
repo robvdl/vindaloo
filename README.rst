@@ -1,10 +1,11 @@
 Vindaloo
 ========
 
-Vindaloo is a new API library for the Pyramid web framework, using
-SQLAlchemy as the ORM and Marshmallow for it's schemas, it is currently
-under development.  Vindaloo only supports Python 3, Python 2 support
-will not be added to keep the codebase tidy.
+Vindaloo is a new API library for the Pyramid web framework, it uses
+SQLAlchemy as the ORM and Marshmallow for API schemas. Vindaloo is
+currently under active development, so should not be used in production
+systems yet.  Vindaloo will only ever support Python 3, Python 2
+support will not be added to keep the codebase tidy and modern.
 
 The project was created from the work that was done in the
 PyramidCMS API, which has been abandoned since, but a lot was
