@@ -1,5 +1,6 @@
 import json
 
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
 
 
@@ -16,11 +17,13 @@ class ApiRenderer(object):
         bundle = value
 
         if request is not None:
-            if self.get_output_format(request) == 'json':
+            output_format = self.get_output_format(request)
+
+            if output_format == 'json':
                 response = request.response
                 response.content_type = 'application/json'
                 return json.dumps(bundle.data, sort_keys=True)
-            else:
+            elif output_format == 'html':
                 # Set template to use with pyramid_jinja2 renderer.
                 self.info.name = bundle.template
 
@@ -30,6 +33,9 @@ class ApiRenderer(object):
                 # Now delegate the rest to pyramid_jinja2.
                 renderer = renderer_factory(self.info)
                 return renderer({'bundle': bundle}, system)
+            else:
+                msg = 'Invalid output format: "{}".'.format(output_format)
+                raise HTTPBadRequest(explanation=msg)
 
     def get_output_format(self, request):
         """
@@ -39,12 +45,13 @@ class ApiRenderer(object):
         :param request: Pyramid request object.
         :return: Output format to use ('json' or 'html').
         """
-        accept_header_list = list(request.accept)
+        if 'format' in request.GET:
+            return request.GET['format']
 
         # Pyramid parses the HTTP "Accept:" header as request.accept
         # Prefer JSON over any other format, so if accept is */* use JSON.
         # NOTE: The order here is crucial, or we might match text/html first.
-        if accept_header_list in (['*/*'], ['application/json']):
+        if list(request.accept) in (['*/*'], ['application/json']):
             return 'json'
         elif 'text/html' or 'application/xhtml+xml' in request.accept:
             return 'html'
