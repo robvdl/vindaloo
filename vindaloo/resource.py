@@ -308,6 +308,6 @@ class ModelResource(Resource):
             schema = self.schema()
             result = schema.dump(obj)
 
-            return Bundle(obj=obj, data=result.data)
+            return Bundle(obj=obj, data=result.data, template='api/obj_detail.jinja2')
         else:
             return HTTPNotFound(explanation='Object not found.')

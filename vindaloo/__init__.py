@@ -22,6 +22,10 @@ def includeme(config):
     config.scan('.models')
     config.scan('.views')
 
+    # Configure pyramid_jinja2 settings.
+    config.add_jinja2_search_path('vindaloo:templates')
+    config.add_jinja2_extension('jinja2.ext.with_')
+
     # Store the dbsession_factory in the application registry.
     session_factory = get_session_factory(get_engine(settings))
     config.registry['dbsession_factory'] = session_factory

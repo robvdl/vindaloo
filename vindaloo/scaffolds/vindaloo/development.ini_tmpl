@@ -16,8 +16,10 @@ pyramid.includes =
 
 sqlalchemy.url = sqlite:///%(here)s/{{project}}.sqlite
 
-# Session secret key, keep this secret and never store it on GIT.
+# Keep this key safe, never store the secret key in GIT for production systems.
 session.secret = {{secret_key}}
+session.cookie_httponly = True
+session.cookie_secure = False
 
 # By default, the toolbar only appears for clients from IP addresses
 # '127.0.0.1' and '::1'.

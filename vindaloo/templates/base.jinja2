@@ -1,0 +1,12 @@
+<html>
+
+<head>
+  <title>Vindaloo{% if title %} - {{ title }}{% endif %}</title>
+</head>
+
+<body>
+  {% block main %}{% endblock %}
+  <p>Status: Logged {% if request.user %}in{% else %}out{% endif %}</p>
+</body>
+
+</html>
