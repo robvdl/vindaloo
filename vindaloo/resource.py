@@ -102,14 +102,11 @@ class Resource(metaclass=ResourceMetaLoader):
 
     @reify
     def schema(self):
-        # Don't use a schema for DELETE.
-        # But use the filter schema for GET list.
-        if self.request.method == 'GET' and self.is_list_route:
-            schema = self._meta.filters
-        else:
-            schema = self._meta.schema
+        return self._meta.schema or Schema
 
-        return schema or Schema
+    @reify
+    def filters(self):
+        return self._meta.filters or Schema
 
     @reify
     def is_list_route(self):
@@ -144,13 +141,13 @@ class Resource(metaclass=ResourceMetaLoader):
         return {'errors': self.request.errors}
 
     def validate_request(self):
-        meth = self.request.method
+        method = self.request.method
         is_list = self.is_list_route
         is_detail = self.is_detail_route
 
         # Only do schema validation for specific cases that use it.
         # This still needs to handle POST and PUT list cases when supported.
-        if meth in ('GET', 'POST') and is_list or meth == 'PUT' and is_detail:
+        if method == 'POST' and is_list or method == 'PUT' and is_detail:
             validate_schema(self.request, self.schema())
 
     def dispatch(self):
@@ -311,3 +308,10 @@ class ModelResource(Resource):
             return Bundle(obj=obj, data=result.data, template='api/obj_detail.jinja2')
         else:
             return HTTPNotFound(explanation='Object not found.')
+
+    def get_list(self):
+        items = self.dbsession.query(self.model)
+        schema = self.schema(many=True)
+        result = schema.dump(items)
+
+        return Bundle(items=items, data=result.data, template='api/obj_list.jinja2')
