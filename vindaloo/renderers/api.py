@@ -3,7 +3,7 @@ import json
 
 class ApiRenderer(object):
     """
-    Used by the report resource.
+    Renders API responses to either JSON or HTML based on request headers.
     """
 
     def __init__(self, info):
