@@ -1,5 +1,7 @@
 from marshmallow import Schema, fields
 
+from .group import GroupSchema
+
 
 class UserSchema(Schema):
     id = fields.Int(dump_only=True)
@@ -12,3 +14,4 @@ class UserSchema(Schema):
     is_superuser = fields.Bool(default=False)
     created_at = fields.DateTime()
     last_login = fields.DateTime()
+    groups = fields.Nested(GroupSchema, many=True)
