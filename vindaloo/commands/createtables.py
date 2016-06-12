@@ -1,11 +1,16 @@
 from vindaloo.cli import BaseCommand
 from vindaloo.db import Model
+from vindaloo.auth.resources import UserResource, GroupResource, PermissionResource
 
 
 class Command(BaseCommand):
     """
-    Management command to create database tables.
+    Creates database tables and permissions.
     """
 
     def handle(self, args):
         Model.metadata.create_all(self.dbsession.bind)
+
+        # Creates permissions for the auth resources only for now.
+        for resource in (UserResource, GroupResource, PermissionResource):
+            resource.create_permissions(self.dbsession)

@@ -10,6 +10,7 @@ from .core.utils import generate_name_from_class
 from .validation import validate_schema
 from .bundle import Bundle
 from .fields import ToMany, ToOne
+from .models import Permission
 
 log = logging.getLogger(__name__)
 
@@ -136,6 +137,20 @@ class Resource(metaclass=ResourceMetaLoader):
         detail_route = '{}-{}-detail'.format(api.name, cls._meta.name)
         config.add_view(cls, attr='dispatch', route_name=detail_route, renderer='api')
         config.add_route(detail_route, detail_path)
+
+    @classmethod
+    def create_permissions(cls, dbsession):
+        """
+        Creates the 4 required permissions for the current resource class,
+        create, read, update & delete.
+
+        :param dbsession: SQLAlchemy database session.
+        """
+        for action in ('create', 'read', 'update', 'delete'):
+            name = cls._meta.name
+            perm = Permission(name='{}-{}'.format(name, action),
+                              description='Able to {} {}.'.format(action, name))
+            dbsession.add(perm)
 
     def validation_errors(self):
         self.request.response.status_code = 400
