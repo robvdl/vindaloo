@@ -6,3 +6,9 @@ class Bundle:
         self.data = data or {}
         self.schema = schema
         self.template = template
+
+    def __repr__(self):
+        if self.obj is not None:
+            return '<Bundle obj={} data={}>'.format(self.obj, self.data)
+        else:
+            return '<Bundle items={} data={}>'.format(list(self.items), self.data)
