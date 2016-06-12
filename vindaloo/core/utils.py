@@ -1,4 +1,5 @@
 import re
+import importlib
 
 # this regex is used to convert camelcase model names to table or api names
 RE_CAMELCASE = re.compile(r'([A-Z]+)(?=[a-z0-9])')
@@ -23,3 +24,20 @@ def generate_name_from_class(obj_class, separator='_'):
         return separator + word.lower()
 
     return RE_CAMELCASE.sub(_join, obj_class.__name__).lstrip(separator)
+
+
+def import_class(class_name):
+    """
+    Imports a class by name.
+
+    Will raise ImportError if the module does not exist,
+    or will raise AttributeError if the class does not exist.
+
+    :param class_name: Name of class to import.
+    :return: Imported class
+    """
+    parts = class_name.split('.')
+    module_name = '.'.join(parts[:-1])
+    class_name = parts[-1]
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)

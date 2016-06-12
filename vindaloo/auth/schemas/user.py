@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 
-from .group import GroupSchema
+from vindaloo.fields import ToMany
 
 
 class UserSchema(Schema):
@@ -14,4 +14,4 @@ class UserSchema(Schema):
     is_superuser = fields.Bool(default=False)
     created_at = fields.DateTime()
     last_login = fields.DateTime()
-    groups = fields.Nested(GroupSchema, many=True)
+    groups = ToMany('vindaloo.auth.resources.group.GroupResource')

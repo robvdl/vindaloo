@@ -1,6 +1,6 @@
 import logging
 
-from marshmallow import Schema
+from marshmallow import Schema, fields
 from pyramid.decorator import reify
 from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed,\
     HTTPNotFound
@@ -9,6 +9,7 @@ from .core.paginator import Paginator
 from .core.utils import generate_name_from_class
 from .validation import validate_schema
 from .bundle import Bundle
+from .fields import ToMany, ToOne
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class Resource(metaclass=ResourceMetaLoader):
 
     def __init__(self, request):
         self.request = request
-        self.request.errors = {}
+        self.request.errors = getattr(self.request, 'errors', {})
 
     @reify
     def schema(self):
@@ -297,21 +298,107 @@ class ModelResource(Resource):
     def dbsession(self):
         return self.request.dbsession
 
+    def build_relationship_tree(self, nested_fields, prefix='', tree=None):
+        if tree is None:
+            tree = {}
+
+        for name, field in nested_fields.items():
+            node_path = name + '.'
+            node_name = prefix + name
+
+            if issubclass(field.__class__, ToOne):
+                tree[node_name] = field.resource._meta.name
+                self.build_relationship_tree(field.nested._declared_fields, node_path, tree)
+
+            if issubclass(field.__class__, ToMany):
+                tree[node_name] = field.resource._meta.name
+                self.build_relationship_tree(field.nested._declared_fields, node_path, tree)
+
+            elif issubclass(field.__class__, fields.Nested):
+                # We need to have access to the resource class, which ToOne()
+                # and ToMany() both provide, you cannot use Nested() directly.
+                raise ValueError('Must use provided ToOne and ToMany classes.')
+
+        return tree
+
+    def find_items_by_path(self, data, path, found=None):
+        if found is None:
+            found = []
+
+        parts = path.split('.')
+        new_path = '.'.join(parts[1:])
+        value = data[parts[0]]
+
+        if type(value) is list:
+            if len(parts) > 1:
+                for item in value:
+                    self.find_items_by_path(item, new_path, found)
+            else:
+                found.extend(value)
+                data[parts[0]] = [v['id'] for v in value]
+        else:
+            if len(parts) > 1:
+                self.find_items_by_path(value, new_path, found)
+            else:
+                found.append(value)
+                data[parts[0]] = value['id']
+
+        return found
+
+    def build_response(self, schema, result):
+        tree = self.build_relationship_tree(schema.fields)
+        sorted_paths = sorted(tree.keys(), key=lambda p: p.count('.'), reverse=True)
+        extra = {resource: {} for path, resource in tree.items()}
+        meta = {}
+
+        if type(result.data) is list:
+            data = result.data
+        else:
+            data = [result.data]
+
+        for node_data in data:
+            for path in sorted_paths:
+                resource = tree[path]
+                found = self.find_items_by_path(node_data, path)
+
+                for item in found:
+                    if item['id'] not in extra[resource]:
+                        extra[resource][item['id']] = item
+
+        return {
+            'data': data,
+            'extra': extra,
+            'meta': meta
+        }
+
+    def build_query(self):
+        return self.dbsession.query(self.model)
+
     def get_detail(self):
         obj_id = self.request.matchdict['id']
-        obj = self.dbsession.query(self.model).get(obj_id)
+        obj = self.build_query().get(obj_id)
 
         if obj:
             schema = self.schema()
             result = schema.dump(obj)
 
-            return Bundle(obj=obj, data=result.data, template='api/obj_detail.jinja2')
+            return Bundle(
+                obj=obj,
+                data=self.build_response(schema, result),
+                schema=schema,
+                template='api/obj_detail.jinja2'
+            )
         else:
             return HTTPNotFound(explanation='Object not found.')
 
     def get_list(self):
-        items = self.dbsession.query(self.model)
+        items = self.build_query()
         schema = self.schema(many=True)
         result = schema.dump(items)
 
-        return Bundle(items=items, data=result.data, template='api/obj_list.jinja2')
+        return Bundle(
+            items=items,
+            data=self.build_response(schema, result),
+            schema=schema,
+            template='api/obj_list.jinja2'
+        )
