@@ -195,72 +195,124 @@ class Resource(metaclass=ResourceMetaLoader):
         else:
             raise HTTPMethodNotAllowed()
 
-    def build_relationship_tree(self, nested_fields, prefix='', tree=None):
-        if tree is None:
-            tree = {}
+    def build_relationship_map(self, schema_fields, prefix=''):
+        """
+        This method uses recursion to find all relationship type
+        fields (ToOne and ToMany) in a schema and then constructs a
+        lookup table keyed by dotted field name and resource name
+        as the values.
 
-        for name, field in nested_fields.items():
+        :param schema_fields: List of fields starting from the toplevel schema.
+        :param prefix: Prefix used for dotted field names.
+        :return: Dict with dotted field names as key and resource as value.
+        """
+        relationships = {}
+
+        for name, field in schema_fields.items():
             node_path = name + '.'
             node_name = prefix + name
 
             if issubclass(field.__class__, ToOne):
-                tree[node_name] = field.resource._meta.name
-                self.build_relationship_tree(field.nested._declared_fields, node_path, tree)
+                nested_fields = field.nested._declared_fields
+                relationships[node_name] = field.resource._meta.name
+                relationships.update(self.build_relationship_map(nested_fields, node_path))
 
             if issubclass(field.__class__, ToMany):
-                tree[node_name] = field.resource._meta.name
-                self.build_relationship_tree(field.nested._declared_fields, node_path, tree)
+                nested_fields = field.nested._declared_fields
+                relationships[node_name] = field.resource._meta.name
+                relationships.update(self.build_relationship_map(nested_fields, node_path))
 
             elif issubclass(field.__class__, fields.Nested):
                 # We need to have access to the resource class, which ToOne()
                 # and ToMany() both provide, you cannot use Nested() directly.
                 raise ValueError('Must use provided ToOne and ToMany classes.')
 
-        return tree
+        return relationships
 
-    def find_items_by_path(self, data, path, found=None):
-        if found is None:
-            found = []
+    def extract_nested_resources(self, data, path):
+        """
+        This method uses recursion to find all nested resources in
+        the dictionary called "data" that match the dotted path found
+        in the "path" argument.
 
-        parts = path.split('.')
-        new_path = '.'.join(parts[1:])
-        value = data[parts[0]]
+        The dotted path is split into segments and we traverse these
+        segments until we reach the last segment where we are expecting
+        to find the nested resources that need to be extracted,
+        these are then collected and returned at the end of the function.
 
+        Since we can expect to find either serialized ToOne and ToMany
+        fields, we can expect either list or dictionary types.
+
+        Note that the original data will be modified once a nested
+        resource is extracted, it will be replaced simply by it's id.
+
+        :param data: Dictionary containing serialized data.
+        :param path: Dotted path to nested records to extract.
+        :return: List of resources found.
+        """
+        # List of nested resources found so far.
+        resources = []
+
+        segments = path.split('.')
+        new_path = '.'.join(segments[1:])
+        value = data[segments[0]]
+
+        # Was this a ToOne or ToMany type?
         if type(value) is list:
-            if len(parts) > 1:
+            if len(segments) > 1:
                 for item in value:
-                    self.find_items_by_path(item, new_path, found)
+                    resources.extend(self.extract_nested_resources(item, new_path))
             else:
-                found.extend(value)
-                data[parts[0]] = [v['id'] for v in value]
+                resources.extend(value)
+                data[segments[0]] = [v['id'] for v in value]
         else:
-            if len(parts) > 1:
-                self.find_items_by_path(value, new_path, found)
+            if len(segments) > 1:
+                resources.extend(self.extract_nested_resources(value, new_path))
             else:
-                found.append(value)
-                data[parts[0]] = value['id']
+                resources.append(value)
+                data[segments[0]] = value['id']
 
-        return found
+        return resources
 
     def build_response(self, schema, result):
-        tree = self.build_relationship_tree(schema.fields)
-        sorted_paths = sorted(tree.keys(), key=lambda p: p.count('.'), reverse=True)
-        extra = {resource: {} for path, resource in tree.items()}
+        """
+        Given the serialized result coming from Marshmallow,
+        we now optimize the response size by moving nested records
+        at the end of the response rather than embedding them.
+
+        :param schema: Schema instance.
+        :param result: Marshmallow result.
+        :return: Optimised response dictionary.
+        """
+        # Builds a map of all ToOne and ToMany fields in dotted form.
+        # We then order these starting with the outermost nodes.
+        relationships = self.build_relationship_map(schema.fields)
+        sorted_relationships = sorted(relationships.keys(),
+                                      key=lambda p: p.count('.'), reverse=True)
+
+        # List of additional resources used by the main resource.
+        # These are placed at the end rather than embedding them,
+        # which keeps response sizes small for repeated records.
+        extra = {resource: {} for path, resource in relationships.items()}
         meta = {}
 
+        # Is this a list response or detail response?
         if type(result.data) is list:
             data = result.data
         else:
             data = [result.data]
 
+        # Loop through nodes in the schema, relationship nodes only.
+        # Note that extracting the nested resources also modifies
+        # the original data structure, this is explained in detail in
+        # the docstring for the Resource.extract_nested_resources() method.
         for node_data in data:
-            for path in sorted_paths:
-                resource = tree[path]
-                found = self.find_items_by_path(node_data, path)
-
-                for item in found:
-                    if item['id'] not in extra[resource]:
-                        extra[resource][item['id']] = item
+            for path in sorted_relationships:
+                resource_name = relationships[path]
+                for nested_item in self.extract_nested_resources(node_data, path):
+                    item_id = nested_item['id']
+                    if item_id not in extra[resource_name]:
+                        extra[resource_name][item_id] = nested_item
 
         return {
             'data': data,
