@@ -1,6 +1,6 @@
 import json
 
-from pyramid.httpexceptions import HTTPBadRequest
+from pyramid.httpexceptions import HTTPUnsupportedMediaType
 from pyramid_jinja2 import renderer_factory
 
 
@@ -35,7 +35,7 @@ class ApiRenderer:
                 return renderer({'bundle': bundle}, system)
             else:
                 msg = 'Invalid output format: "{}".'.format(output_format)
-                raise HTTPBadRequest(explanation=msg)
+                raise HTTPUnsupportedMediaType(explanation=msg)
 
     def get_output_format(self, request):
         """
