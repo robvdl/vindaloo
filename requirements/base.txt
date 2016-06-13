@@ -4,3 +4,4 @@ sqlalchemy==1.0.13
 zope.sqlalchemy==0.7.6
 pyramid_tm==0.12.1
 passlib==1.6.5
+pyramid_jinja2==2.6.2

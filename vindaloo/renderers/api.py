@@ -4,7 +4,7 @@ from pyramid.httpexceptions import HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
 
 
-class ApiRenderer(object):
+class ApiRenderer:
     """
     Renders API responses to either JSON or HTML based on request headers.
     """
