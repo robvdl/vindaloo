@@ -32,7 +32,8 @@ def includeme(config):
 
     # Configures the passlib hash algorithm and settings to use.
     # The password algorithm, either pbkdf2_sha256, pbkdf2_sha512 or bcrypt.
-    settings['vindaloo.auth.hashalg'] = settings.get('vindaloo.auth.hashalg', 'pbkdf2_sha256')
+    hashalg = settings.get('vindaloo.auth.hashalg', 'pbkdf2_sha256')
+    settings['vindaloo.auth.hashalg'] = hashalg
     if 'vindaloo.auth.rounds' in settings:
         settings['vindaloo.auth.rounds'] = int(settings['vindaloo.auth.rounds'])
 
@@ -51,6 +52,10 @@ def includeme(config):
     # Add methods for logging users in and out.
     config.add_request_method(login_user, 'login')
     config.add_request_method(logout_user, 'logout')
+
+    # Browsable HTML API views require serving of static files.
+    static_url = settings.get('vindaloo.static_url', 'static')
+    config.add_static_view(name=static_url, path='vindaloo:static')
 
     # Provide better JSON formatting for exceptions.
     HTTPException._json_formatter = format_json_exception

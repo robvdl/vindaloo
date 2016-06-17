@@ -19,6 +19,10 @@ session.secret = {{secret_key}}
 session.cookie_httponly = True
 session.cookie_secure = True
 
+# URL that static files for the browsable API will be served up from.
+# If this path conflicts with your application, change it to something else.
+vindaloo.static_url = /static
+
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0

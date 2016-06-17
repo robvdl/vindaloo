@@ -21,6 +21,10 @@ session.secret = {{secret_key}}
 session.cookie_httponly = True
 session.cookie_secure = False
 
+# URL that static files for the browsable API will be served up from.
+# If this path conflicts with your application, change it to something else.
+vindaloo.static_url = /static
+
 # By default, the toolbar only appears for clients from IP addresses
 # '127.0.0.1' and '::1'.
 # debugtoolbar.hosts = 127.0.0.1 ::1
