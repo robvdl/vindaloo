@@ -1,12 +1,40 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vindaloo{% if title %} - {{ title }}{% endif %}</title>
+  {% if request.debug %}
+    <link rel="stylesheet" type="text/css" href="{{ request.static_url('vindaloo:static/api/semantic.css') }}">
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.js') }}"></script>
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.js') }}"></script>
+  {% else %}
+    <link rel="stylesheet" type="text/css" href="{{ request.static_url('vindaloo:static/api/semantic.min.css') }}">
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.min.js') }}"></script>
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.min.js') }}"></script>
+  {% endif %}
 </head>
 
 <body>
-  {% block main %}{% endblock %}
-  <p>Status: Logged {% if request.user %}in{% else %}out{% endif %}</p>
+  <div class="ui container" style="padding-top: 15px">
+    {% include "navigation.jinja2" %}
+    {% block main %}{% endblock %}
+  </div>
+  <script>
+    {% block script %}
+      $(document).ready(function() {
+        $('.ui.dropdown').dropdown({
+          on: 'hover'
+        });
+
+        $('.ui.menu a.item').on('click', function() {
+          $(this).addClass('active').siblings().removeClass('active');
+        });
+      });
+    {% endblock %}
+  </script>
 </body>
 
 </html>

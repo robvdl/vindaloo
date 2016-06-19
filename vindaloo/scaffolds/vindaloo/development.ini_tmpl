@@ -25,6 +25,9 @@ session.cookie_secure = False
 # If this path conflicts with your application, change it to something else.
 vindaloo.static_url = /static
 
+# If true use non-minified assets.
+vindaloo.debug = true
+
 # By default, the toolbar only appears for clients from IP addresses
 # '127.0.0.1' and '::1'.
 # debugtoolbar.hosts = 127.0.0.1 ::1

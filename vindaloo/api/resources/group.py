@@ -2,7 +2,7 @@ from sqlalchemy.orm import joinedload
 
 from vindaloo.resource import ModelResource
 from vindaloo.models import Group
-from vindaloo.auth.schemas.group import GroupSchema
+from vindaloo.api.schemas.group import GroupSchema
 
 
 class GroupResource(ModelResource):

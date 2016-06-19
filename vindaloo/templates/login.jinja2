@@ -1,0 +1,15 @@
+{% extends "base.jinja2" %}
+
+{% block title %}Login{% endblock %}
+
+{% import "macros.jinja2" as m %}
+
+{% block main %}
+  <h1>Login</h1>
+  <form action="{{ request.route_path('login') }}" method="POST"
+        class="ui form{% if form.errors %} error{% endif %}">
+    {{ m.form_field(form.username) }}
+    {{ m.form_field(form.password) }}
+    {{ form.login(class='ui button') }}
+  </form>
+{% endblock %}

@@ -1,6 +1,6 @@
 from vindaloo.cli import BaseCommand
 from vindaloo.db import Model
-from vindaloo.auth.resources import UserResource, GroupResource, PermissionResource
+from vindaloo.api.resources import UserResource, GroupResource, PermissionResource
 
 
 class Command(BaseCommand):

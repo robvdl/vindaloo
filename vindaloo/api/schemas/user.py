@@ -14,4 +14,4 @@ class UserSchema(Schema):
     is_superuser = fields.Bool(default=False)
     created_at = fields.DateTime()
     last_login = fields.DateTime()
-    groups = ToMany('vindaloo.auth.resources.group.GroupResource')
+    groups = ToMany('vindaloo.api.resources.group.GroupResource')

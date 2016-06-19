@@ -1,7 +1,9 @@
+import json
 import logging
 
 from vindaloo.resource import Resource
 from vindaloo.service import Service
+from vindaloo.bundle import Bundle
 
 log = logging.getLogger(__name__)
 
@@ -22,21 +24,29 @@ class Api:
         self.services = []
         self.__name__ = name
 
-    def add(self, *items):
+    def add(self, item):
         """
-        Adds one or more Resource or Services to this Api object.
+        Add a Resource or Service to the API.
 
-        :param items: List of one or more resources or services to add.
+        :param item: Resource or Service
+        """
+        if issubclass(item, Resource):
+            log.debug('Adding resource: {}'.format(item))
+            self.resources.append(item)
+        elif issubclass(item, Service):
+            log.debug('Adding service: {}'.format(item))
+            self.services.append(item)
+        else:
+            raise ValueError('Can only add items of type Resource or Service.')
+
+    def add_all(self, items):
+        """
+        Add a list of Resource and Service classes to the API.
+
+        :param items: List of Resource or Service classes.
         """
         for item in items:
-            if issubclass(item, Resource):
-                log.debug('Adding resource: {}'.format(item))
-                self.resources.append(item)
-            elif issubclass(item, Service):
-                log.debug('Adding service: {}'.format(item))
-                self.services.append(item)
-            else:
-                raise ValueError('Can only add classes of type Resource or Service.')
+            self.add(item)
 
     def register(self, config):
         """
@@ -56,8 +66,8 @@ class Api:
         # that method will then get a request object as it's first argument.
         # This is different to other views found in services and resources.
         index_route = '{}-api-index'.format(self.name)
+        config.add_view(self.index, route_name=index_route, renderer='api')
         config.add_route(index_route, self.path)
-        config.add_view(self.index, route_name=index_route, renderer='json')
 
         # Add routes and views for services.
         for service in self.services:
@@ -71,7 +81,17 @@ class Api:
         """
         API index view.
         """
-        return {
+        data = {
             'resources': [resource.get_path(self) for resource in self.resources],
             'services': [service.get_path(self) for service in self.services]
         }
+
+        bundle = Bundle(
+            data=data,
+            template='api/index.jinja2'
+        )
+
+        # Format JSON nicely for display and attach to bundle.
+        bundle.json = json.dumps(bundle.data, sort_keys=True, indent=4)
+
+        return bundle

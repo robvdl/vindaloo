@@ -23,6 +23,9 @@ session.cookie_secure = True
 # If this path conflicts with your application, change it to something else.
 vindaloo.static_url = /static
 
+# If true use non-minified assets.
+vindaloo.debug = true
+
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0

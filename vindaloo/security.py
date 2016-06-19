@@ -130,6 +130,10 @@ class RootFactory:
 
         :param request: Pyramid request object
         """
+        # There is no point doing this for static requests.
+        if request.matched_route and request.matched_route.name == '__/static/':
+            return
+
         # To start with, superusers get access to everything.
         self.__acl__ = [(Allow, 'superuser', ALL_PERMISSIONS)]
 

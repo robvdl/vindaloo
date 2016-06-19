@@ -1,0 +1,14 @@
+{# Semantic ui form field with validation #}
+{% macro form_field(field) -%}
+  <div class="field">
+    {{ field.label() }}
+    {{ field(**kwargs) }}
+  </div>
+  {% if field.errors %}
+    {% for error in field.errors %}
+      <div class="ui error message">
+        <p>{{ error }}</p>
+      </div>
+    {% endfor %}
+  {% endif %}
+{%- endmacro %}

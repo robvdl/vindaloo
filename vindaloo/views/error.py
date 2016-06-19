@@ -21,4 +21,7 @@ def server_error(context, request):
     :return: HTTP Response.
     """
     log.error('Caught an unexpected exception.', exc_info=True)
-    return HTTPInternalServerError(explanation='The server was unable to complete the response.')
+
+    return HTTPInternalServerError(
+        explanation='The server was unable to complete the response.'
+    )
