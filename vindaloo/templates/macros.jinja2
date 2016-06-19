@@ -5,9 +5,13 @@
   </div>
   {% if field.errors %}
     {% for error in field.errors %}
-      <div class="ui error message">
-        <p>{{ error }}</p>
-      </div>
+      {{ validation_error(error) }}
     {% endfor %}
   {% endif %}
+{%- endmacro %}
+
+{% macro validation_error(message) -%}
+  <div class="ui error message">
+    <p>{{ message }}</p>
+  </div>
 {%- endmacro %}

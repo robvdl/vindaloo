@@ -17,6 +17,8 @@ def login(request):
         if request.login(username, password):
             request.session.flash('Logged in successfully.', queue='success')
         else:
+            # Create a new form so the username isn't pre-populated.
+            form = LoginForm()
             request.session.flash('Invalid username or password.', queue='error')
 
     return {

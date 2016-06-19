@@ -6,9 +6,13 @@
 
 {% block main %}
   <h1>Login</h1>
-  <form action="{{ request.route_path('login') }}" class="ui form{% if form.errors %} error{% endif %}" method="POST">
+  {% set flash_errors = request.session.pop_flash('error') %}
+  <form action="{{ request.route_path('login') }}" class="ui form{% if form.errors or flash_errors %} error{% endif %}" method="POST">
     {{ m.form_field(form.username) }}
     {{ m.form_field(form.password) }}
+    {% for message in flash_errors %}
+      {{ m.validation_error(message) }}
+    {% endfor %}
     {{ form.login(class='ui button') }}
   </form>
 {% endblock %}
