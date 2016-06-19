@@ -1,5 +1,5 @@
 {% macro form_field(field) -%}
-  <div class="field">
+  <div class="field{% if field.errors %} error{% endif %}">
     {{ field.label() }}
     {{ field(**kwargs) }}
   </div>
