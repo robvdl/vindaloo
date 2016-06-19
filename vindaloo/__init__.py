@@ -35,6 +35,10 @@ def includeme(config):
     # Debug only really controls whether to send minified assets for now.
     settings['vindaloo.debug'] = asbool(settings.get('vindaloo.debug', 'false'))
 
+    # Redirect URL for after login and logout.
+    settings['vindaloo.login_redirect_url'] = settings.get('vindaloo.login_redirect_url', '/')
+    settings['vindaloo.logout_redirect_url'] = settings.get('vindaloo.logout_redirect_url', '/')
+
     # Configures the passlib hash algorithm and settings to use.
     # The password algorithm, either pbkdf2_sha256, pbkdf2_sha512 or bcrypt.
     hashalg = settings.get('vindaloo.auth.hashalg', 'pbkdf2_sha256')

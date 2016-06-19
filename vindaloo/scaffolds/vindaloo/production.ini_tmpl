@@ -26,6 +26,10 @@ vindaloo.static_url = /static
 # If true use non-minified assets.
 vindaloo.debug = true
 
+# URLs for tweaking the authentication system.
+vindaloo.login_redirect_url = /
+vindaloo.logout_redirect_url = /
+
 [server:main]
 use = egg:waitress#main
 host = 0.0.0.0

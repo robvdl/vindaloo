@@ -33,9 +33,10 @@
           {% endfor %}
           {{ m.form_field(form.username) }}
           {{ m.form_field(form.password) }}
+          <input type="hidden" name="return_url" value="{{ return_url }}">
           <div class="ui right aligned grid">
             <div class="column">
-              <a href="{{ cancel_url }}" class="ui button">Cancel</a>
+              <a href="{{ return_url }}" class="ui button">Cancel</a>
               {{ form.login(class='ui button') }}
             </div>
           </div>
