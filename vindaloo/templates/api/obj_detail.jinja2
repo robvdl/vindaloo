@@ -18,6 +18,10 @@
     </div>
   </div>
 
-  <h1>{{ bundle.obj.id }}: {{ bundle.obj }}</h1>
+  {% if bundle.obj %}
+    <h1>{{ bundle.obj.id }}: {{ bundle.obj }}</h1>
+  {% else %}
+    <h1>API Response</h1>
+  {% endif %}
   <pre>{{ bundle.json }}</pre>
 {% endblock %}

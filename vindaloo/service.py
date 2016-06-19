@@ -71,7 +71,7 @@ class Service(metaclass=ServiceMetaLoader):
     @classmethod
     def setup_routes(cls, config, api):
         route = '{}-{}'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=route, renderer='json')
+        config.add_view(cls, attr='dispatch', route_name=route, renderer='api')
         config.add_route(route, cls.get_path(api))
 
     def validate_request(self):

@@ -1,7 +1,9 @@
 import json
 
-from pyramid.httpexceptions import HTTPUnsupportedMediaType
+from pyramid.httpexceptions import HTTPUnsupportedMediaType, HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
+
+from vindaloo.bundle import Bundle
 
 
 class ApiRenderer:
@@ -14,7 +16,17 @@ class ApiRenderer:
 
     def __call__(self, value, system):
         request = system.get('request')
-        bundle = value
+
+        # If we receive a dict, for example from a service, we can
+        # still convert it into a bundle to allow html rendering.
+        if type(value) is Bundle:
+            bundle = value
+        elif type(value) is dict:
+            bundle = Bundle(data=value, template='api/obj_detail.jinja2')
+        elif type(value) is list:
+            bundle = Bundle(items=value, template='api/obj_list.jinja2')
+        else:
+            raise HTTPBadRequest(explanation='Invalid data type for API renderer.')
 
         if request is not None:
             output_format = self.get_output_format(request)
