@@ -4,6 +4,7 @@ from pyramid.httpexceptions import HTTPUnsupportedMediaType, HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
 
 from vindaloo.bundle import Bundle
+from vindaloo.core.utils import get_output_format
 
 
 class ApiRenderer:
@@ -29,7 +30,7 @@ class ApiRenderer:
             raise HTTPBadRequest(explanation='Invalid data type for API renderer.')
 
         if request is not None:
-            output_format = self.get_output_format(request)
+            output_format = get_output_format(request)
 
             if output_format == 'json':
                 response = request.response
@@ -48,24 +49,3 @@ class ApiRenderer:
             else:
                 msg = 'Invalid output format: "{}".'.format(output_format)
                 raise HTTPUnsupportedMediaType(explanation=msg)
-
-    def get_output_format(self, request):
-        """
-        Parses the Accept: header from the request and chooses the
-        appropriate output format to use.
-
-        :param request: Pyramid request object.
-        :return: Output format to use ('json' or 'html').
-        """
-        if 'format' in request.GET:
-            return request.GET['format']
-
-        # Pyramid parses the HTTP "Accept:" header as request.accept
-        # Prefer JSON over any other format, so if accept is */* use JSON.
-        # NOTE: The order here is crucial, or we might match text/html first.
-        if list(request.accept) in (['*/*'], ['application/json']):
-            return 'json'
-        elif 'text/html' or 'application/xhtml+xml' in request.accept:
-            return 'html'
-        else:
-            return 'json'

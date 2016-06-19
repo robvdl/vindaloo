@@ -2,6 +2,7 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config, forbidden_view_config
 
 from vindaloo.forms import LoginForm
+from vindaloo.core.utils import get_output_format
 
 
 @forbidden_view_config()
@@ -16,14 +17,12 @@ def redirect_to_login(request):
 
     :param request: Pyramid request object.
     """
-    # Prefer JSON over html, ignore ['*/*'] or we end up matching text/html.
-    if list(request.accept) != ['*/*']:
-        if 'text/html' in request.accept:
-            redirect_url = request.route_url('login')
-            redirect_url += '?return_url=' + request.path
-            return HTTPFound(location=redirect_url)
+    if get_output_format(request) == 'html':
+        redirect_url = request.route_url('login')
+        redirect_url += '?return_url=' + request.path
+        return HTTPFound(location=redirect_url)
 
-    # For JSON responses pass through original exception.
+    # For JSON responses return the original exception.
     return request.exception
 
 

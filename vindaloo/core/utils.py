@@ -41,3 +41,25 @@ def import_class(class_name):
     class_name = parts[-1]
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
+
+
+def get_output_format(request):
+    """
+    Parses the Accept: header from the request and chooses the
+    appropriate output format to use.
+
+    :param request: Pyramid request object.
+    :return: Output format to use ('json' or 'html').
+    """
+    if 'format' in request.GET:
+        return request.GET['format']
+
+    # Pyramid parses the HTTP "Accept:" header as request.accept
+    # Prefer JSON over any other format, so if accept is */* use JSON.
+    # NOTE: The order here is crucial, or we might match text/html first.
+    if list(request.accept) in (['*/*'], ['application/json']):
+        return 'json'
+    elif 'text/html' or 'application/xhtml+xml' in request.accept:
+        return 'html'
+    else:
+        return 'json'
