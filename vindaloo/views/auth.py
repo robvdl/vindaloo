@@ -35,8 +35,11 @@ def login(request):
     :param request: Pyramid request object.
     """
     form = LoginForm(request.POST)
-    redirect_url = request.registry.settings['vindaloo.login_redirect_url']
-    return_url = request.POST.get('return_url', request.GET.get('return_url', redirect_url))
+    return_url = request.POST.get('return_url',
+                                  request.GET.get('return_url', request.referer))
+
+    if return_url is None:
+        return_url = request.registry.settings['vindaloo.login_redirect_url']
 
     if request.method == 'POST' and form.validate():
         username = form.username.data
