@@ -155,7 +155,7 @@ class RootFactory:
         """
         override_format = request.GET.get('format')
 
-        if override_format in MIMETYPES:
+        if override_format and override_format in MIMETYPES:
             request.accept = [MIMETYPES[override_format]]
         elif list(request.accept) == ['*/*']:
             request.accept = [MIMETYPES['json']]
