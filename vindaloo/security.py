@@ -3,6 +3,7 @@ import binascii
 
 import passlib.hash
 from pyramid.security import Allow, remember, forget, ALL_PERMISSIONS
+from webob.acceptparse import MIMEAccept
 
 from .models import User, Group, Permission
 from .core.constants import MIMETYPES
@@ -156,6 +157,6 @@ class RootFactory:
         override_format = request.GET.get('format')
 
         if override_format and override_format in MIMETYPES:
-            request.accept = [MIMETYPES[override_format]]
+            request.accept = MIMEAccept(MIMETYPES[override_format])
         elif list(request.accept) == ['*/*']:
-            request.accept = [MIMETYPES['json']]
+            request.accept = MIMEAccept(MIMETYPES['json'])
