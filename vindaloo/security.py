@@ -5,6 +5,7 @@ import passlib.hash
 from pyramid.security import Allow, remember, forget, ALL_PERMISSIONS
 
 from .models import User, Group, Permission
+from .core.constants import MIMETYPES
 
 
 def groupfinder(username, request):
@@ -154,7 +155,7 @@ class RootFactory:
         """
         override_format = request.GET.get('format')
 
-        if override_format == 'html':
-            request.accept = ['text/html']
-        elif list(request.accept) == ['*/*'] or override_format == 'json':
-            request.accept = ['application/json']
+        if override_format in MIMETYPES:
+            request.accept = [MIMETYPES[override_format]]
+        elif list(request.accept) == ['*/*']:
+            request.accept = [MIMETYPES['json']]
