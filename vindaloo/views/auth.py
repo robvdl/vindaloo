@@ -7,8 +7,9 @@ from vindaloo.forms import LoginForm
 @view_config(route_name='login', renderer='login.jinja2')
 @forbidden_view_config(accept='text/html', renderer='login.jinja2')
 def login(request):
-    return_url = request.POST.get('url', request.url)
     form = LoginForm(request.POST)
+    return_url = request.POST.get('url', request.url)
+    cancel_url = request.referer or return_url
 
     if request.method == 'POST' and form.validate():
         username = form.username.data
@@ -21,6 +22,7 @@ def login(request):
 
     return {
         'return_url': return_url,
+        'cancel_url': cancel_url,
         'form': form
     }
 

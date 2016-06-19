@@ -8,33 +8,32 @@
   <title>Vindaloo{% if title %} - {{ title }}{% endif %}</title>
   {% if request.debug %}
     <link rel="stylesheet" type="text/css" href="{{ request.static_url('vindaloo:static/api/semantic.css') }}">
-    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.js') }}"></script>
-    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.js') }}"></script>
   {% else %}
     <link rel="stylesheet" type="text/css" href="{{ request.static_url('vindaloo:static/api/semantic.min.css') }}">
-    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.min.js') }}"></script>
-    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.min.js') }}"></script>
   {% endif %}
+  {% block extra_head %}{% endblock %}
 </head>
 
 <body>
-  <div class="ui container" style="padding-top: 15px">
-    {% include "navigation.jinja2" %}
-    {% block main %}{% endblock %}
-  </div>
+  {% block main %}{% endblock %}
+  {% if request.debug %}
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.js') }}"></script>
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.js') }}"></script>
+  {% else %}
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/jquery-3.0.0.min.js') }}"></script>
+    <script type="text/javascript" src="{{ request.static_url('vindaloo:static/api/semantic.min.js') }}"></script>
+  {% endif %}
   <script>
-    {% block script %}
-      $(document).ready(function() {
-        $('.ui.dropdown').dropdown({
-          on: 'hover'
-        });
-
-        $('.ui.menu a.item').on('click', function() {
-          $(this).addClass('active').siblings().removeClass('active');
-        });
+    $(document).ready(function() {
+      $('.ui.dropdown').dropdown({
+        on: 'hover'
       });
-    {% endblock %}
+      $('.ui.menu a.item').on('click', function() {
+        $(this).addClass('active').siblings().removeClass('active');
+      });
+    });
   </script>
+  {% block extra_foot %}{% endblock %}
 </body>
 
 </html>

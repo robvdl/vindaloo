@@ -4,15 +4,43 @@
 
 {% import "macros.jinja2" as m %}
 
+{% set flash_errors = request.session.pop_flash('error') %}
+
+{% block extra_head %}
+  <style type="text/css">
+    body {
+      background-color: #aaa;
+    }
+
+    body > .grid {
+      height: 100%;
+    }
+
+    .column {
+      max-width: 450px;
+    }
+  </style>
+{% endblock %}
+
 {% block main %}
-  <h1>Login</h1>
-  {% set flash_errors = request.session.pop_flash('error') %}
-  <form action="{{ request.route_path('login') }}" class="ui form{% if form.errors or flash_errors %} error{% endif %}" method="POST">
-    {{ m.form_field(form.username) }}
-    {{ m.form_field(form.password) }}
-    {% for message in flash_errors %}
-      {{ m.validation_error(message) }}
-    {% endfor %}
-    {{ form.login(class='ui button') }}
-  </form>
+  <div class="ui middle aligned center aligned grid">
+    <div class="column">
+      <form class="ui form{% if form.errors or flash_errors %} error{% endif %}" action="{{ request.route_path('login') }}" method="POST">
+        <div class="ui stacked left aligned segment">
+          <h2>User login</h2>
+          {% for message in flash_errors %}
+            {{ m.validation_error(message) }}
+          {% endfor %}
+          {{ m.form_field(form.username) }}
+          {{ m.form_field(form.password) }}
+          <div class="ui right aligned grid">
+            <div class="column">
+              <a href="{{ cancel_url }}" class="ui button">Cancel</a>
+              {{ form.login(class='ui button') }}
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 {% endblock %}
