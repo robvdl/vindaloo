@@ -134,9 +134,27 @@ class RootFactory:
         if request.matched_route and request.matched_route.name == '__/static/':
             return
 
+        # Allows accept headers to be overridden from query param.
+        self.override_accept_header(request)
+
         # To start with, superusers get access to everything.
         self.__acl__ = [(Allow, 'superuser', ALL_PERMISSIONS)]
 
         # Add ACLs from database to the list.
         perms = request.dbsession.query(Permission, Group).join(Group.permissions)
         self.__acl__.extend([(Allow, 'group:' + grp.name, perm.name) for perm, grp in perms])
+
+    def override_accept_header(self, request):
+        """
+        This allows the output format to be overridden using ?format=
+        query param and still affect exceptions as well, which are handled
+        internally by Pyramid, and hard to "fix" any other way.
+
+        :param request: Pyramid request object
+        """
+        override_format = request.GET.get('format')
+
+        if override_format == 'html':
+            request.accept = ['text/html']
+        elif list(request.accept) == ['*/*'] or override_format == 'json':
+            request.accept = ['application/json']

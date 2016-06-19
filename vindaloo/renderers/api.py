@@ -4,7 +4,6 @@ from pyramid.httpexceptions import HTTPUnsupportedMediaType, HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
 
 from vindaloo.bundle import Bundle
-from vindaloo.core.utils import get_output_format
 
 
 class ApiRenderer:
@@ -30,13 +29,11 @@ class ApiRenderer:
             raise HTTPBadRequest(explanation='Invalid data type for API renderer.')
 
         if request is not None:
-            output_format = get_output_format(request)
-
-            if output_format == 'json':
+            if 'application/json' in request.accept:
                 response = request.response
                 response.content_type = 'application/json'
                 return json.dumps(bundle.data, sort_keys=True)
-            elif output_format == 'html':
+            elif 'text/html' in request.accept:
                 # Set template to use with pyramid_jinja2 renderer.
                 self.info.name = bundle.template
 
@@ -47,5 +44,4 @@ class ApiRenderer:
                 renderer = renderer_factory(self.info)
                 return renderer({'bundle': bundle}, system)
             else:
-                msg = 'Invalid output format: "{}".'.format(output_format)
-                raise HTTPUnsupportedMediaType(explanation=msg)
+                raise HTTPUnsupportedMediaType(explanation='Invalid output format.')

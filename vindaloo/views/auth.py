@@ -2,28 +2,20 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config, forbidden_view_config
 
 from vindaloo.forms import LoginForm
-from vindaloo.core.utils import get_output_format
 
 
-@forbidden_view_config()
+@forbidden_view_config(accept='text/html')
 def redirect_to_login(request):
     """
     The forbidden view config will redirect the user to the login
     form when browsing the API using with web browser and the API
     returns a HTTPForbidden exception or response.
 
-    If the accept headers are for application/json then we return
-    the JSON exception un-altered.
-
     :param request: Pyramid request object.
     """
-    if get_output_format(request) == 'html':
-        redirect_url = request.route_url('login')
-        redirect_url += '?return_url=' + request.path
-        return HTTPFound(location=redirect_url)
-
-    # For JSON responses return the original exception.
-    return request.exception
+    redirect_url = request.route_url('login')
+    redirect_url += '?return_url=' + request.path
+    return HTTPFound(location=redirect_url)
 
 
 @view_config(route_name='login', renderer='login.jinja2')
