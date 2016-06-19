@@ -29,11 +29,8 @@ class ApiRenderer:
             raise HTTPBadRequest(explanation='Invalid data type for API renderer.')
 
         if request is not None:
-            if 'application/json' in request.accept:
-                response = request.response
-                response.content_type = 'application/json'
-                return json.dumps(bundle.data, sort_keys=True)
-            elif 'text/html' in request.accept:
+            # Ensure we check text/html first, the order matters.
+            if 'text/html' in request.accept:
                 # Set template to use with pyramid_jinja2 renderer.
                 self.info.name = bundle.template
 
@@ -43,5 +40,9 @@ class ApiRenderer:
                 # Now delegate the rest to pyramid_jinja2.
                 renderer = renderer_factory(self.info)
                 return renderer({'bundle': bundle}, system)
+            elif 'application/json' in request.accept:
+                response = request.response
+                response.content_type = 'application/json'
+                return json.dumps(bundle.data, sort_keys=True)
             else:
                 raise HTTPUnsupportedMediaType(explanation='Invalid output format.')
