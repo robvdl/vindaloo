@@ -6,8 +6,7 @@
 
 {% block main %}
   <h1>Login</h1>
-  <form action="{{ request.route_path('login') }}" method="POST"
-        class="ui form{% if form.errors %} error{% endif %}">
+  <form action="{{ request.route_path('login') }}" class="ui form{% if form.errors %} error{% endif %}" method="POST">
     {{ m.form_field(form.username) }}
     {{ m.form_field(form.password) }}
     {{ form.login(class='ui button') }}
