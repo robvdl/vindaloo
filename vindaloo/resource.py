@@ -25,7 +25,7 @@ class ResourceMeta:
     name = None
     path = None
     paginator_class = Paginator
-    allowed_methods = ['get', 'post', 'put', 'delete']
+    allowed_methods = ['GET', 'POST', 'PUT', 'DELETE']
     list_allowed_methods = None
     detail_allowed_methods = None
     limit = 0
@@ -45,7 +45,7 @@ class ResourceMeta:
                     overrides[override_name] = getattr(meta, override_name)
 
         allowed_methods = overrides.get('allowed_methods',
-                                        ['get', 'post', 'put', 'delete'])
+                                        ['GET', 'POST', 'PUT', 'DELETE'])
 
         if overrides.get('list_allowed_methods') is None:
             overrides['list_allowed_methods'] = allowed_methods
@@ -55,9 +55,9 @@ class ResourceMeta:
 
         # Ensure all verbs are lowercase for consistency.
         overrides['list_allowed_methods'] = \
-            [verb.lower() for verb in overrides['list_allowed_methods']]
+            [verb.upper() for verb in overrides['list_allowed_methods']]
         overrides['detail_allowed_methods'] = \
-            [verb.lower() for verb in overrides['detail_allowed_methods']]
+            [verb.upper() for verb in overrides['detail_allowed_methods']]
 
         # If name is missing we can determine it from the model class name.
         # This only works for resources however, not services.
@@ -167,14 +167,18 @@ class Resource(metaclass=ResourceMetaLoader):
             validate_schema(self.request, self.schema())
 
     def dispatch(self):
-        method = self.request.method.lower()
+        method = self.request.method
+        response = self.request.response
 
         if self.is_list_route:
-            handler = getattr(self, method + '_list', None)
+            handler = getattr(self, method.lower() + '_list', None)
             allowed_methods = self._meta.list_allowed_methods
         else:
-            handler = getattr(self, method + '_detail', None)
+            handler = getattr(self, method.lower() + '_detail', None)
             allowed_methods = self._meta.detail_allowed_methods
+
+        # Set the Accept header based on allowed_methods.
+        response.headers['Allowed'] = ', '.join(allowed_methods + ['HEAD', 'OPTIONS'])
 
         if handler and callable(handler) and method in allowed_methods:
             # Run schema validation.
@@ -452,6 +456,7 @@ class ModelResource(Resource):
             return Bundle(
                 obj=obj,
                 data=self.build_response(schema, result),
+                model=self._meta.model,
                 schema=schema,
                 template='api/obj_detail.jinja2'
             )
@@ -466,6 +471,7 @@ class ModelResource(Resource):
         return Bundle(
             items=items,
             data=self.build_response(schema, result),
+            model=self._meta.model,
             schema=schema,
             template='api/obj_list.jinja2'
         )

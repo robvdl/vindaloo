@@ -18,6 +18,11 @@
     </div>
   </div>
 
-  <h1>Items</h1>
-  <pre>{{ bundle.json }}</pre>
+  <h1>{{ bundle.model.__name__ }} List</h1>
+  <pre><strong>{{ request.method }}</strong> {{ request.path }}{% if request.query_string %}?{{ request.query_string }}{% endif %}
+
+<strong>HTTP {{ request.response.status }}</strong>
+{% for header, value in request.response.headers.items() %}<strong>{{ header }}:</strong> {{ value }}
+{% endfor %}
+{{ bundle.json }}</pre>
 {% endblock %}

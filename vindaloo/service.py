@@ -84,8 +84,8 @@ class Service(metaclass=ServiceMetaLoader):
         return {'errors': self.request.errors}
 
     def dispatch(self):
-        method = self.request.method.lower()
-        handler = getattr(self, method, None)
+        method = self.request.method
+        handler = getattr(self, method.lower(), None)
 
         if handler and callable(handler):
             # Run schema validation.
