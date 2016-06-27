@@ -18,7 +18,7 @@ class ApiRenderer:
         request = system.get('request')
 
         if request is not None:
-            request.response.headers['Vary'] = 'Accept'
+            request.response.headers['Vary'] = 'Accept-Encoding'
             bundle = self.get_bundle(value)
 
             # Ensure we check text/html first, the order matters.

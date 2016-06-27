@@ -43,6 +43,12 @@ class ServiceMetaLoader(type):
         if meta:
             new_class._meta = ServiceMeta(meta)
 
+            # Do this now so we don't have to at runtime.
+            new_class._meta.allowed_methods = []
+            for method in ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'):
+                if getattr(new_class, method.lower(), None):
+                    new_class._meta.allowed_methods.append(method)
+
         return new_class
 
 
@@ -85,7 +91,12 @@ class Service(metaclass=ServiceMetaLoader):
 
     def dispatch(self):
         method = self.request.method
+        response = self.request.response
         handler = getattr(self, method.lower(), None)
+
+        # Set the Accept header based on allowed_methods.
+        allowed_methods = self._meta.allowed_methods + ['HEAD', 'OPTIONS']
+        response.headers['Allowed'] = ', '.join(allowed_methods)
 
         if handler and callable(handler):
             # Run schema validation.
