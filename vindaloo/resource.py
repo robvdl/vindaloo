@@ -3,7 +3,7 @@ import logging
 from marshmallow import Schema, fields
 from pyramid.decorator import reify
 from pyramid.httpexceptions import HTTPNotImplemented, HTTPMethodNotAllowed,\
-    HTTPNotFound
+    HTTPNotFound, HTTPUnsupportedMediaType
 
 from .core.paginator import Paginator
 from .core.utils import generate_name_from_class
@@ -11,6 +11,7 @@ from .validation import validate_schema
 from .bundle import Bundle
 from .fields import ToMany, ToOne
 from .models import Permission
+from .decorator import view
 
 log = logging.getLogger(__name__)
 
@@ -101,6 +102,15 @@ class Resource(metaclass=ResourceMetaLoader):
     def __init__(self, request):
         self.request = request
         self.request.errors = getattr(self.request, 'errors', {})
+        self.response = self.request.response
+
+        # Set Allowed response header based on Meta class.
+        allowed = self.allowed_methods + ['HEAD', 'OPTIONS']
+        self.response.headers['Allowed'] = ', '.join(allowed)
+        self.response.headers['Vary'] = 'Accept-Encoding'
+
+        if self.request.method not in self.allowed_methods:
+            raise HTTPMethodNotAllowed()
 
     @reify
     def schema(self):
@@ -109,6 +119,13 @@ class Resource(metaclass=ResourceMetaLoader):
     @reify
     def filters(self):
         return self._meta.filters or Schema
+
+    @reify
+    def allowed_methods(self):
+        if self.is_list_route:
+            return self._meta.list_allowed_methods
+        else:
+            return self._meta.detail_allowed_methods
 
     @reify
     def is_list_route(self):
@@ -128,15 +145,27 @@ class Resource(metaclass=ResourceMetaLoader):
 
     @classmethod
     def setup_routes(cls, config, api):
+        # Create the list route.
         list_path = cls.get_path(api)
         list_route = '{}-{}-list'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=list_route, renderer='api')
         config.add_route(list_route, list_path)
 
+        # Create the detail route.
         detail_path = list_path + '/{id}'
         detail_route = '{}-{}-detail'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=detail_route, renderer='api')
         config.add_route(detail_route, detail_path)
+
+        # Setup views on the dispatch method for the list route.
+        for view_kwargs in cls.dispatch.__views__:
+            config.add_view(cls, attr='dispatch', route_name=list_route, **view_kwargs)
+
+        # Setup views on the dispatch method for the detail route.
+        for view_kwargs in cls.dispatch.__views__:
+            config.add_view(cls, attr='dispatch', route_name=detail_route, **view_kwargs)
+
+        # Setup fallbacks for unsupported accept header or Pyramid returns 404.
+        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=list_route)
+        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=detail_route)
 
     @classmethod
     def create_permissions(cls, dbsession):
@@ -153,7 +182,7 @@ class Resource(metaclass=ResourceMetaLoader):
             dbsession.add(perm)
 
     def validation_errors(self):
-        self.request.response.status_code = 400
+        self.response.status_code = 400
         return {'errors': self.request.errors}
 
     def validate_request(self):
@@ -166,38 +195,24 @@ class Resource(metaclass=ResourceMetaLoader):
         if method == 'POST' and is_list or method == 'PUT' and is_detail:
             validate_schema(self.request, self.schema())
 
+    @view(accept='text/html', renderer='api')
+    @view(accept='application/json', renderer='json')
     def dispatch(self):
-        method = self.request.method
-        response = self.request.response
+        self.validate_request()
+        if self.request.errors:
+            return self.validation_errors()
 
         if self.is_list_route:
-            handler = getattr(self, method.lower() + '_list', None)
-            allowed_methods = self._meta.list_allowed_methods
+            handler = getattr(self, self.request.method.lower() + '_list')
         else:
-            handler = getattr(self, method.lower() + '_detail', None)
-            allowed_methods = self._meta.detail_allowed_methods
+            handler = getattr(self, self.request.method.lower() + '_detail')
 
-        # Set the Accept header based on allowed_methods.
-        response.headers['Allowed'] = ', '.join(allowed_methods + ['HEAD', 'OPTIONS'])
-
-        if handler and callable(handler) and method in allowed_methods:
-            # Run schema validation.
-            self.validate_request()
-
-            # Did schema validation produce any errors?
-            if self.request.errors:
-                return self.validation_errors()
-
-            # Call handler (get_list, get_detail, etc.)
+        if handler and callable(handler):
             response = handler()
-
-            # Did the handler produce any errors?
             if self.request.errors:
                 return self.validation_errors()
 
             return response
-        else:
-            raise HTTPMethodNotAllowed()
 
     def build_relationship_map(self, schema_fields, prefix=''):
         """

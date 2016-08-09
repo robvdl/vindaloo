@@ -8,7 +8,10 @@ from vindaloo.bundle import Bundle
 
 class ApiRenderer:
     """
-    Renders API responses to either JSON or HTML based on request headers.
+    Browsable API renderer.
+
+    TODO: Could be made redundant by calling jinja2 renderer directly now,
+    this was not the case in the past but could well be tidied up next.
     """
 
     def __init__(self, info):
@@ -18,26 +21,17 @@ class ApiRenderer:
         request = system.get('request')
 
         if request is not None:
-            request.response.headers['Vary'] = 'Accept-Encoding'
             bundle = self.get_bundle(value)
 
-            # Ensure we check text/html first, the order matters.
-            if 'text/html' in request.accept:
-                # Set template to use with pyramid_jinja2 renderer.
-                self.info.name = bundle.template
+            # Set template to use with pyramid_jinja2 renderer.
+            self.info.name = bundle.template
 
-                # Format JSON nicely for display and attach to bundle.
-                bundle.json = json.dumps(bundle.data, sort_keys=True, indent=4)
+            # Format JSON nicely for display and attach to bundle.
+            bundle.json = json.dumps(bundle.data, sort_keys=True, indent=4)
 
-                # Now delegate the rest to pyramid_jinja2.
-                renderer = renderer_factory(self.info)
-                return renderer({'bundle': bundle}, system)
-            elif 'application/json' in request.accept:
-                response = request.response
-                response.content_type = 'application/json'
-                return json.dumps(bundle.data, sort_keys=True)
-            else:
-                raise HTTPUnsupportedMediaType(explanation='Invalid output format.')
+            # Now delegate the rest to pyramid_jinja2.
+            renderer = renderer_factory(self.info)
+            return renderer({'bundle': bundle}, system)
 
     def get_bundle(self, value):
         """

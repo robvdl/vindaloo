@@ -1,8 +1,9 @@
 from marshmallow import Schema
 from pyramid.decorator import reify
-from pyramid.httpexceptions import HTTPMethodNotAllowed
+from pyramid.httpexceptions import HTTPMethodNotAllowed, HTTPUnsupportedMediaType
 
 from .validation import validate_schema
+from .decorator import view
 
 
 class ServiceMeta:
@@ -65,10 +66,23 @@ class Service(metaclass=ServiceMetaLoader):
     def __init__(self, request):
         self.request = request
         self.request.errors = {}
+        self.response = self.request.response
+
+        # Set Allowed response header based on Meta class.
+        allowed = self.allowed_methods + ['HEAD', 'OPTIONS']
+        self.response.headers['Allowed'] = ', '.join(allowed)
+        self.response.headers['Vary'] = 'Accept-Encoding'
+
+        if self.request.method not in self.allowed_methods:
+            raise HTTPMethodNotAllowed()
 
     @reify
     def schema(self):
         return self._meta.schema or Schema
+
+    @reify
+    def allowed_methods(self):
+        return self._meta.allowed_methods
 
     @classmethod
     def get_path(cls, api):
@@ -77,8 +91,14 @@ class Service(metaclass=ServiceMetaLoader):
     @classmethod
     def setup_routes(cls, config, api):
         route = '{}-{}'.format(api.name, cls._meta.name)
-        config.add_view(cls, attr='dispatch', route_name=route, renderer='api')
         config.add_route(route, cls.get_path(api))
+
+        # Setup views on the dispatch method.
+        for view_kwargs in cls.dispatch.__views__:
+            config.add_view(cls, attr='dispatch', route_name=route, **view_kwargs)
+
+        # Setup fallbacks for unsupported accept header or Pyramid returns 404.
+        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=route)
 
     def validate_request(self):
         # Never do schema validation for DELETE requests.
@@ -86,33 +106,20 @@ class Service(metaclass=ServiceMetaLoader):
             validate_schema(self.request, self.schema())
 
     def validation_errors(self):
-        self.request.response.status_code = 400
+        self.response.status_code = 400
         return {'errors': self.request.errors}
 
+    @view(accept='text/html', renderer='api')
+    @view(accept='application/json', renderer='json')
     def dispatch(self):
-        method = self.request.method
-        response = self.request.response
-        handler = getattr(self, method.lower(), None)
+        self.validate_request()
+        if self.request.errors:
+            return self.validation_errors()
 
-        # Set the Accept header based on allowed_methods.
-        allowed_methods = self._meta.allowed_methods + ['HEAD', 'OPTIONS']
-        response.headers['Allowed'] = ', '.join(allowed_methods)
-
+        handler = getattr(self, self.request.method.lower())
         if handler and callable(handler):
-            # Run schema validation.
-            self.validate_request()
-
-            # Did schema validation produce any errors?
-            if self.request.errors:
-                return self.validation_errors()
-
-            # Call handler (get, post, put, etc.)
             response = handler()
-
-            # Did the handler produce any errors?
             if self.request.errors:
                 return self.validation_errors()
 
             return response
-        else:
-            raise HTTPMethodNotAllowed()

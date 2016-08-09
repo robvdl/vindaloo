@@ -13,3 +13,6 @@ class Bundle:
             return '<Bundle obj={} data={}>'.format(self.obj, self.data)
         else:
             return '<Bundle items={} data={}>'.format(list(self.items), self.data)
+
+    def __json__(self, request):
+        return self.data
