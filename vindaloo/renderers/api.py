@@ -1,6 +1,6 @@
 import json
 
-from pyramid.httpexceptions import HTTPUnsupportedMediaType, HTTPBadRequest
+from pyramid.httpexceptions import HTTPBadRequest
 from pyramid_jinja2 import renderer_factory
 
 from vindaloo.bundle import Bundle
