@@ -145,6 +145,16 @@ class Resource(metaclass=ResourceMetaLoader):
 
     @classmethod
     def setup_routes(cls, config, api):
+        """
+        The static method setup_routes is called when an Api object is
+        added to the Pyramid Configurator, using config.add_api().
+
+        At this point, all of the resources and services registered
+        with that Api will have the setup_routes() method called.
+
+        :param config: Pyramid Configurator object.
+        :param api: Api object.
+        """
         # Create the list route.
         list_path = cls.get_path(api)
         list_route = '{}-{}-list'.format(api.name, cls._meta.name)
@@ -155,17 +165,37 @@ class Resource(metaclass=ResourceMetaLoader):
         detail_route = '{}-{}-detail'.format(api.name, cls._meta.name)
         config.add_route(detail_route, detail_path)
 
-        # Setup views on the dispatch method for the list route.
-        for view_kwargs in cls.dispatch.__views__:
-            config.add_view(cls, attr='dispatch', route_name=list_route, **view_kwargs)
+        # Setup views for both the list and detail routes.
+        # If the @view decorator is missing, create a default json view.
+        for verb in ('get', 'post', 'put', 'delete', 'patch'):
+            list_handler = getattr(cls, verb + '_list', None)
+            detail_handler = getattr(cls, verb + '_detail', None)
 
-        # Setup views on the dispatch method for the detail route.
-        for view_kwargs in cls.dispatch.__views__:
-            config.add_view(cls, attr='dispatch', route_name=detail_route, **view_kwargs)
+            if callable(list_handler):
+                views = getattr(list_handler, '__views__', [{'renderer': 'json'}])
+                for view_kwargs in views:
+                    config.add_view(
+                        cls,
+                        attr='dispatch',
+                        route_name=list_route,
+                        request_method=verb.upper(),
+                        **view_kwargs
+                    )
+
+            if callable(detail_handler):
+                views = getattr(detail_handler, '__views__', [{'renderer': 'json'}])
+                for view_kwargs in views:
+                    config.add_view(
+                        cls,
+                        attr='dispatch',
+                        route_name=detail_route,
+                        request_method=verb.upper(),
+                        **view_kwargs
+                    )
 
         # Setup fallbacks for unsupported accept header or Pyramid returns 404.
-        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=list_route)
-        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=detail_route)
+        config.add_view(cls, attr='fallback_view', route_name=list_route)
+        config.add_view(cls, attr='fallback_view', route_name=detail_route)
 
     @classmethod
     def create_permissions(cls, dbsession):
@@ -182,10 +212,20 @@ class Resource(metaclass=ResourceMetaLoader):
             dbsession.add(perm)
 
     def validation_errors(self):
+        """
+        Sets status code to 400 and returns dict with list of errors.
+
+        This is called if request.errors is not empty.
+        """
         self.response.status_code = 400
         return {'errors': self.request.errors}
 
     def validate_request(self):
+        """
+        The validate_request method should run schema validation for the
+        current request. This method can be overridden if needed and will
+        often use different schemas based on the route or request method.
+        """
         method = self.request.method
         is_list = self.is_list_route
         is_detail = self.is_detail_route
@@ -195,19 +235,30 @@ class Resource(metaclass=ResourceMetaLoader):
         if method == 'POST' and is_list or method == 'PUT' and is_detail:
             validate_schema(self.request, self.schema())
 
-    @view(accept='text/html', renderer='api')
-    @view(accept='application/json', renderer='json')
     def dispatch(self):
+        """
+        The dispatch method is called before the list or detail view,
+        is called, e.g. before get_list or get_detail is called.
+
+        The purpose of the dispatch method is to run the schema
+        validation before the view (self.handler) is called.
+
+        After that, the view (self.handler) is either called or the
+        request is aborted and a list of errors is returned instead.
+
+        :return: Response from handler, or list of errors.
+        """
         self.validate_request()
         if self.request.errors:
             return self.validation_errors()
 
+        method = self.request.method.lower()
         if self.is_list_route:
-            handler = getattr(self, self.request.method.lower() + '_list')
+            handler = getattr(self, method + '_list')
         else:
-            handler = getattr(self, self.request.method.lower() + '_detail')
+            handler = getattr(self, method + '_detail')
 
-        if handler and callable(handler):
+        if callable(handler):
             response = handler()
             if self.request.errors:
                 return self.validation_errors()
@@ -339,8 +390,16 @@ class Resource(metaclass=ResourceMetaLoader):
             'meta': meta
         }
 
+    def obj_get(self, obj_id):
+        return None
+
+    def obj_get_list(self):
+        return []
+
     # Views.
 
+    @view(accept='text/html', renderer='api/obj_list.jinja2')
+    @view(accept='application/json', renderer='json')
     def get_list(self):
         """
         Returns a serialized list of resources.
@@ -350,8 +409,19 @@ class Resource(metaclass=ResourceMetaLoader):
 
         Should return a HttpResponse (200 OK).
         """
-        raise HTTPNotImplemented()
+        items = self.obj_get_list()
+        schema = self.schema(many=True)
+        result = schema.dump(items)
 
+        return Bundle(
+            items=items,
+            data=self.build_response(schema, result),
+            model=self._meta.model,
+            schema=schema
+        )
+
+    @view(accept='text/html', renderer='api/obj_detail.jinja2')
+    @view(accept='application/json', renderer='json')
     def get_detail(self):
         """
         Returns a single serialized resource.
@@ -361,7 +431,20 @@ class Resource(metaclass=ResourceMetaLoader):
 
         Should return a HttpResponse (200 OK).
         """
-        raise HTTPNotImplemented()
+        obj = self.obj_get(self.request.matchdict['id'])
+
+        if obj:
+            schema = self.schema()
+            result = schema.dump(obj)
+
+            return Bundle(
+                obj=obj,
+                data=self.build_response(schema, result),
+                model=self._meta.model,
+                schema=schema
+            )
+        else:
+            return HTTPNotFound(explanation='Object not found.')
 
     def post_list(self):
         """
@@ -378,7 +461,7 @@ class Resource(metaclass=ResourceMetaLoader):
 
     def post_detail(self):
         """
-        In some APIs this creates a new subcollection of the resource.
+        In some APIs this creates a new sub collection of the resource.
 
         It is not implemented by default because most people's data models
         aren't self-referential.
@@ -450,6 +533,22 @@ class Resource(metaclass=ResourceMetaLoader):
         """
         raise HTTPNotImplemented()
 
+    def fallback_view(self):
+        """
+        The fallback view will be called if no view can be matched,
+        which happens either if the request method if not allowed
+        for this Resource, or if the accept header contains an
+        unsupported media type.
+
+        Without the fallback view, Pyramid will just send a 404.
+
+        :return: HTTP 405 or 415.
+        """
+        if self.request.method not in self.allowed_methods:
+            raise HTTPMethodNotAllowed()
+        else:
+            raise HTTPUnsupportedMediaType()
+
 
 class ModelResource(Resource):
 
@@ -460,33 +559,11 @@ class ModelResource(Resource):
     def build_query(self):
         return self.dbsession.query(self.model)
 
-    def get_detail(self):
-        obj_id = self.request.matchdict['id']
-        obj = self.build_query().get(obj_id)
+    def apply_filters(self, query):
+        return query
 
-        if obj:
-            schema = self.schema()
-            result = schema.dump(obj)
+    def obj_get(self, obj_id):
+        return self.build_query().get(obj_id)
 
-            return Bundle(
-                obj=obj,
-                data=self.build_response(schema, result),
-                model=self._meta.model,
-                schema=schema,
-                template='api/obj_detail.jinja2'
-            )
-        else:
-            return HTTPNotFound(explanation='Object not found.')
-
-    def get_list(self):
-        items = self.build_query()
-        schema = self.schema(many=True)
-        result = schema.dump(items)
-
-        return Bundle(
-            items=items,
-            data=self.build_response(schema, result),
-            model=self._meta.model,
-            schema=schema,
-            template='api/obj_list.jinja2'
-        )
+    def obj_get_list(self):
+        return self.apply_filters(self.build_query())

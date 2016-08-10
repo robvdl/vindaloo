@@ -3,7 +3,6 @@ from pyramid.decorator import reify
 from pyramid.httpexceptions import HTTPMethodNotAllowed, HTTPUnsupportedMediaType
 
 from .validation import validate_schema
-from .decorator import view
 
 
 class ServiceMeta:
@@ -94,11 +93,22 @@ class Service(metaclass=ServiceMetaLoader):
         config.add_route(route, cls.get_path(api))
 
         # Setup views on the dispatch method.
-        for view_kwargs in cls.dispatch.__views__:
-            config.add_view(cls, attr='dispatch', route_name=route, **view_kwargs)
+        # If the @view decorator is missing, create a default json view.
+        for verb in cls._meta.allowed_methods:
+            handler = getattr(cls, verb, None)
+            views = getattr(handler, '__views__', [{'renderer': 'json'}])
 
-        # Setup fallbacks for unsupported accept header or Pyramid returns 404.
-        config.add_view(lambda r: HTTPUnsupportedMediaType(), route_name=route)
+            for view_kwargs in views:
+                config.add_view(
+                    cls,
+                    attr='dispatch',
+                    route_name=route,
+                    request_method=verb,
+                    **view_kwargs
+                )
+
+        # The fallback view is needed to send 405 or 415 or Pyramid sends 404.
+        config.add_view(cls, attr='fallback_view', route_name=route)
 
     def validate_request(self):
         # Never do schema validation for DELETE requests.
@@ -109,17 +119,35 @@ class Service(metaclass=ServiceMetaLoader):
         self.response.status_code = 400
         return {'errors': self.request.errors}
 
-    @view(accept='text/html', renderer='api')
-    @view(accept='application/json', renderer='json')
     def dispatch(self):
         self.validate_request()
         if self.request.errors:
             return self.validation_errors()
 
-        handler = getattr(self, self.request.method.lower())
-        if handler and callable(handler):
+        method = self.request.method.lower()
+        handler = getattr(self, method)
+
+        if callable(handler):
             response = handler()
             if self.request.errors:
                 return self.validation_errors()
 
             return response
+
+    # Views.
+
+    def fallback_view(self):
+        """
+        The fallback view will be called if no view can be matched,
+        which happens either if the request method if not allowed
+        for this Service, or if the accept header contains an
+        unsupported media type.
+
+        Without the fallback view, Pyramid will just send a 404.
+
+        :return: HTTP 405 or 415.
+        """
+        if self.request.method not in self.allowed_methods:
+            raise HTTPMethodNotAllowed()
+        else:
+            raise HTTPUnsupportedMediaType()
