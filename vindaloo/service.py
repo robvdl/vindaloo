@@ -45,9 +45,9 @@ class ServiceMetaLoader(type):
 
             # Do this now so we don't have to at runtime.
             new_class._meta.allowed_methods = []
-            for method in ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'):
-                if getattr(new_class, method.lower(), None):
-                    new_class._meta.allowed_methods.append(method)
+            for verb in ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'):
+                if getattr(new_class, verb.lower(), None):
+                    new_class._meta.allowed_methods.append(verb)
 
         return new_class
 

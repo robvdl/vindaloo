@@ -167,9 +167,9 @@ class Resource(metaclass=ResourceMetaLoader):
 
         # Setup views for both the list and detail routes.
         # If the @view decorator is missing, create a default json view.
-        for verb in ('get', 'post', 'put', 'delete', 'patch'):
-            list_handler = getattr(cls, verb + '_list', None)
-            detail_handler = getattr(cls, verb + '_detail', None)
+        for verb in ('GET', 'POST', 'PUT', 'DELETE', 'PATCH'):
+            list_handler = getattr(cls, verb.lower() + '_list', None)
+            detail_handler = getattr(cls, verb.lower() + '_detail', None)
 
             if callable(list_handler):
                 views = getattr(list_handler, '__views__', [{'renderer': 'json'}])
@@ -178,7 +178,7 @@ class Resource(metaclass=ResourceMetaLoader):
                         cls,
                         attr='dispatch',
                         route_name=list_route,
-                        request_method=verb.upper(),
+                        request_method=verb,
                         **view_kwargs
                     )
 
@@ -189,7 +189,7 @@ class Resource(metaclass=ResourceMetaLoader):
                         cls,
                         attr='dispatch',
                         route_name=detail_route,
-                        request_method=verb.upper(),
+                        request_method=verb,
                         **view_kwargs
                     )
 
