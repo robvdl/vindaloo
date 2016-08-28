@@ -14,7 +14,6 @@ class ServiceMeta:
     """
     name = None
     path = None
-    schema = None
 
     def __new__(cls, meta=None):
         overrides = {}
@@ -58,8 +57,7 @@ class Service(metaclass=ServiceMetaLoader):
 
     A good usage example for a service can be an authentication service.
 
-    Services have Meta classes, but have much less options than resources,
-    they can also use schemas like resources can.
+    Services have Meta classes, but have much less options than resources.
     """
 
     def __init__(self, request):
@@ -77,7 +75,8 @@ class Service(metaclass=ServiceMetaLoader):
 
     @reify
     def schema(self):
-        return self._meta.schema or Schema
+        # request.schema is only there if the @view decorator has a schema
+        return getattr(self.request, 'schema', Schema)
 
     @reify
     def allowed_methods(self):
@@ -95,7 +94,7 @@ class Service(metaclass=ServiceMetaLoader):
         # Setup views on the dispatch method.
         # If the @view decorator is missing, create a default json view.
         for verb in cls._meta.allowed_methods:
-            handler = getattr(cls, verb, None)
+            handler = getattr(cls, verb.lower(), None)
             views = getattr(handler, '__views__', [{'renderer': 'json'}])
 
             for view_kwargs in views:
@@ -110,17 +109,12 @@ class Service(metaclass=ServiceMetaLoader):
         # The fallback view is needed to send 405 or 415 or Pyramid sends 404.
         config.add_view(cls, attr='fallback_view', route_name=route)
 
-    def validate_request(self):
-        # Never do schema validation for DELETE requests.
-        if not self.request.method == 'DELETE':
-            validate_schema(self.request, self.schema())
-
     def validation_errors(self):
         self.response.status_code = 400
         return {'errors': self.request.errors}
 
     def dispatch(self):
-        self.validate_request()
+        validate_schema(self.request, self.schema())
         if self.request.errors:
             return self.validation_errors()
 

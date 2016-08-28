@@ -11,7 +11,7 @@ from .validation import validate_schema
 from .bundle import Bundle
 from .fields import ToMany, ToOne
 from .models import Permission
-from .decorator import view
+from .decorators import view
 
 log = logging.getLogger(__name__)
 

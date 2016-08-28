@@ -6,6 +6,7 @@ from .db import get_engine, get_session_factory, get_dbsession
 from .security import get_authenticated_user, login_user, logout_user
 from .core.exceptions import format_json_exception
 from .views.auth import login, logout
+from .decorators import schema_view
 
 
 def includeme(config):
@@ -61,6 +62,9 @@ def includeme(config):
 
     # Adds a request.debug property, useful for use in templates.
     config.add_request_method(lambda r: settings['vindaloo.debug'], 'debug', reify=True)
+
+    # Allows the schema= keyword argument to be used with @view decorators.
+    config.add_view_deriver(schema_view)
 
     # Add the login and logout routes.
     config.add_route('login', '/login')
