@@ -6,7 +6,13 @@ def view(**kwargs):
     func.__views__, which then gets used later when registering
     routes and views at application startup, this happens in the
     setup_routes function of resources and services.
+
+    If the renderer is missing in the @view decorator, then we
+    set the default renderer of 'json' before calling add_view.
     """
+    # Set the default renderer to 'json' (if missing).
+    kwargs['renderer'] = kwargs.get('renderer', 'json')
+
     def wrapper(func):
         return add_view(func, **kwargs)
 

@@ -23,7 +23,7 @@ class SessionService(Service):
     class Meta:
         name = 'session'
 
-    @view(schema=LoginSchema, renderer='json')
+    @view(schema=LoginSchema)
     def post(self):
         username = self.request.validated['username']
         password = self.request.validated['password']
