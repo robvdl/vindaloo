@@ -13,7 +13,7 @@ def main(global_config, **settings):
 
     apiv1 = Api('v1', path='/api/v1')
     apiv1.add(SessionService)
-    apiv1.add(UserResource, GroupResource, PermissionResource)
+    apiv1.add_all([UserResource, GroupResource, PermissionResource])
 
     config.add_api(apiv1)
 
