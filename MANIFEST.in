@@ -1,5 +1,0 @@
-include *.ini *.rst *.txt *.cfg
-recursive-include vindaloo/alembic *
-recursive-include vindaloo/static *
-recursive-include vindaloo/templates *
-recursive-include requirements *
